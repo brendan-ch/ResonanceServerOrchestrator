@@ -1,8 +1,7 @@
 using System.Net;
-using System.Net.Http.Json;
+using System.Text;
 using Microsoft.Extensions.DependencyInjection;
 using NSubstitute;
-using ResonanceServerOrchestrator.Models;
 using ResonanceServerOrchestrator.Services;
 using ResonanceServerOrchestrator.Stores;
 using ResonanceServerOrchestrator.Tests.TestHelpers;
@@ -26,45 +25,33 @@ public sealed class PostLobbyEndpointTests : IDisposable
         _factory.Dispose();
     }
 
-    private static Lobby CreateLobby(string code = "ABC123") =>
-        new("Test Lobby", true, "lobby-id-1", code, 4, true,
-            new List<LobbyUser> { new("user-1", "Player1", true) },
-            new Dictionary<string, string> { ["gameMode"] = "Deathmatch" });
+    private static StringContent JsonContent(string json) =>
+        new(json, Encoding.UTF8, "application/json");
 
     [Fact]
-    public async Task Post_ValidLobby_Returns202Accepted()
+    public async Task Post_Returns202Accepted()
     {
-        var lobby = CreateLobby();
-
-        var response = await _client.PostAsJsonAsync("/lobbies", lobby);
+        var response = await _client.PostAsync("/lobbies/ABC123", JsonContent("""{"whatever":"you","want":true}"""));
 
         Assert.Equal(HttpStatusCode.Accepted, response.StatusCode);
     }
 
     [Fact]
-    public async Task Post_ValidLobby_StoresLobbyInStore()
+    public async Task Post_StoresBodyInStore()
     {
-        var lobby = CreateLobby("STORE1");
+        const string body = """{"mode":"Deathmatch","players":4}""";
 
-        await _client.PostAsJsonAsync("/lobbies", lobby);
+        await _client.PostAsync("/lobbies/STORE1", JsonContent(body));
 
         var store = _factory.Services.GetRequiredService<ILobbyStore>();
         var stored = store.Get("STORE1");
-        Assert.NotNull(stored);
-        Assert.Equal(lobby.LobbyCode, stored.LobbyCode);
-        Assert.Equal(lobby.Name, stored.Name);
-        Assert.Equal(lobby.LobbyId, stored.LobbyId);
-        Assert.Equal(lobby.MaxPlayers, stored.MaxPlayers);
-        Assert.Equal(lobby.IsOwner, stored.IsOwner);
-        Assert.Equal(lobby.Members.Count, stored.Members.Count);
+        Assert.Equal(body, stored);
     }
 
     [Fact]
-    public async Task Post_ValidLobby_LaunchesProcessWithLobbyCode()
+    public async Task Post_LaunchesProcessWithLobbyCode()
     {
-        var lobby = CreateLobby("LAUNCH1");
-
-        await _client.PostAsJsonAsync("/lobbies", lobby);
+        await _client.PostAsync("/lobbies/LAUNCH1", JsonContent("{}"));
 
         _factory.LauncherSubstitute.Received(1).Launch(
             Arg.Any<string>(),
@@ -72,22 +59,10 @@ public sealed class PostLobbyEndpointTests : IDisposable
     }
 
     [Fact]
-    public async Task Post_EmptyLobbyCode_Returns400BadRequest()
+    public async Task Post_EmptyBody_Returns202Accepted()
     {
-        var lobby = CreateLobby(string.Empty);
+        var response = await _client.PostAsync("/lobbies/XYZ", new StringContent(string.Empty));
 
-        var response = await _client.PostAsJsonAsync("/lobbies", lobby);
-
-        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
-    }
-
-    [Fact]
-    public async Task Post_MalformedJson_Returns400BadRequest()
-    {
-        var content = new StringContent("{ not valid json }", System.Text.Encoding.UTF8, "application/json");
-
-        var response = await _client.PostAsync("/lobbies", content);
-
-        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Equal(HttpStatusCode.Accepted, response.StatusCode);
     }
 }

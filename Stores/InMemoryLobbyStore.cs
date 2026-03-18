@@ -1,15 +1,14 @@
 using System.Collections.Concurrent;
-using ResonanceServerOrchestrator.Models;
 
 namespace ResonanceServerOrchestrator.Stores;
 
 public sealed class InMemoryLobbyStore : ILobbyStore
 {
-    private readonly ConcurrentDictionary<string, Lobby> _lobbies = new();
+    private readonly ConcurrentDictionary<string, string> _lobbies = new();
 
-    public void Set(string lobbyCode, Lobby lobby) =>
-        _lobbies[lobbyCode] = lobby;
+    public void Set(string lobbyCode, string body) =>
+        _lobbies[lobbyCode] = body;
 
-    public Lobby? Get(string lobbyCode) =>
-        _lobbies.TryGetValue(lobbyCode, out var lobby) ? lobby : null;
+    public string? Get(string lobbyCode) =>
+        _lobbies.TryGetValue(lobbyCode, out var body) ? body : null;
 }

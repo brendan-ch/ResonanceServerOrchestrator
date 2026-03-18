@@ -1,4 +1,3 @@
-using ResonanceServerOrchestrator.Models;
 using ResonanceServerOrchestrator.Stores;
 using Xunit;
 
@@ -8,20 +7,15 @@ public sealed class InMemoryLobbyStoreTests
 {
     private readonly InMemoryLobbyStore _store = new();
 
-    private static Lobby CreateLobby(string code = "TEST01") =>
-        new("Test Lobby", true, "id-1", code, 4, true,
-            Array.Empty<LobbyUser>(),
-            new Dictionary<string, string>());
-
     [Fact]
-    public void Set_ThenGet_ReturnsSameLobby()
+    public void Set_ThenGet_ReturnsSameString()
     {
-        var lobby = CreateLobby();
-        _store.Set(lobby.LobbyCode, lobby);
+        const string body = """{"name":"Test","players":4}""";
+        _store.Set("TEST01", body);
 
-        var result = _store.Get(lobby.LobbyCode);
+        var result = _store.Get("TEST01");
 
-        Assert.Equal(lobby, result);
+        Assert.Equal(body, result);
     }
 
     [Fact]
@@ -35,13 +29,11 @@ public sealed class InMemoryLobbyStoreTests
     [Fact]
     public void Set_OverwritesExistingEntry()
     {
-        var original = CreateLobby();
-        var updated = original with { Name = "Updated Lobby" };
+        _store.Set("TEST01", """{"name":"Original"}""");
+        _store.Set("TEST01", """{"name":"Updated"}""");
 
-        _store.Set(original.LobbyCode, original);
-        _store.Set(updated.LobbyCode, updated);
+        var result = _store.Get("TEST01");
 
-        var result = _store.Get(original.LobbyCode);
-        Assert.Equal(updated, result);
+        Assert.Equal("""{"name":"Updated"}""", result);
     }
 }

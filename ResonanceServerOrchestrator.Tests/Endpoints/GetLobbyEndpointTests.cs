@@ -1,7 +1,5 @@
 using System.Net;
-using System.Net.Http.Json;
 using Microsoft.Extensions.DependencyInjection;
-using ResonanceServerOrchestrator.Models;
 using ResonanceServerOrchestrator.Stores;
 using ResonanceServerOrchestrator.Tests.TestHelpers;
 using Xunit;
@@ -24,38 +22,24 @@ public sealed class GetLobbyEndpointTests : IDisposable
         _factory.Dispose();
     }
 
-    private static Lobby CreateLobby(string code = "GET001") =>
-        new("Get Test Lobby", true, "get-lobby-id", code, 6, false,
-            new List<LobbyUser>
-            {
-                new("u1", "Alice", true),
-                new("u2", "Bob", false),
-            },
-            new Dictionary<string, string>
-            {
-                ["gameMode"] = "Capture",
-                ["sceneName"] = "Arena01",
-            });
-
-    private void SeedStore(Lobby lobby)
+    private void SeedStore(string lobbyCode, string body)
     {
         var store = _factory.Services.GetRequiredService<ILobbyStore>();
-        store.Set(lobby.LobbyCode, lobby);
+        store.Set(lobbyCode, body);
     }
 
     [Fact]
-    public async Task Get_ExistingLobbyCode_Returns200WithLobbyJson()
+    public async Task Get_ExistingCode_Returns200()
     {
-        var lobby = CreateLobby("GET200");
-        SeedStore(lobby);
+        SeedStore("GET200", """{"name":"Test"}""");
 
-        var response = await _client.GetAsync($"/lobbies/{lobby.LobbyCode}");
+        var response = await _client.GetAsync("/lobbies/GET200");
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
 
     [Fact]
-    public async Task Get_UnknownLobbyCode_Returns404()
+    public async Task Get_UnknownCode_Returns404()
     {
         var response = await _client.GetAsync("/lobbies/NOTFOUND");
 
@@ -63,29 +47,14 @@ public sealed class GetLobbyEndpointTests : IDisposable
     }
 
     [Fact]
-    public async Task Get_LobbyJson_IncludesMembers()
+    public async Task Get_ReturnsBodyVerbatim()
     {
-        var lobby = CreateLobby("GETMEM");
-        SeedStore(lobby);
+        const string body = """{"whatever":"you","want":true}""";
+        SeedStore("VERBATIM", body);
 
-        var result = await _client.GetFromJsonAsync<Lobby>($"/lobbies/{lobby.LobbyCode}");
+        var response = await _client.GetAsync("/lobbies/VERBATIM");
+        var content = await response.Content.ReadAsStringAsync();
 
-        Assert.NotNull(result);
-        Assert.Equal(2, result.Members.Count);
-        Assert.Contains(result.Members, m => m.DisplayName == "Alice");
-        Assert.Contains(result.Members, m => m.DisplayName == "Bob");
-    }
-
-    [Fact]
-    public async Task Get_LobbyJson_IncludesUnderlyingProviderProperties()
-    {
-        var lobby = CreateLobby("GETPROP");
-        SeedStore(lobby);
-
-        var result = await _client.GetFromJsonAsync<Lobby>($"/lobbies/{lobby.LobbyCode}");
-
-        Assert.NotNull(result);
-        Assert.Equal("Capture", result.UnderlyingProviderProperties["gameMode"]);
-        Assert.Equal("Arena01", result.UnderlyingProviderProperties["sceneName"]);
+        Assert.Equal(body, content);
     }
 }

@@ -1,7 +1,5 @@
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using ResonanceServerOrchestrator.Configuration;
-using ResonanceServerOrchestrator.Models;
 using ResonanceServerOrchestrator.Services;
 using ResonanceServerOrchestrator.Stores;
 
@@ -11,27 +9,28 @@ public static class LobbyEndpoints
 {
     public static IEndpointRouteBuilder MapLobbyEndpoints(this IEndpointRouteBuilder app)
     {
-        app.MapPost("/lobbies", HandlePostLobby);
+        app.MapPost("/lobbies/{lobbyCode}", HandlePostLobby);
         app.MapGet("/lobbies/{lobbyCode}", HandleGetLobby);
         return app;
     }
 
-    private static IResult HandlePostLobby(
-        [FromBody] Lobby? lobby,
+    private static async Task<IResult> HandlePostLobby(
+        string lobbyCode,
+        HttpRequest request,
         ILobbyStore store,
         IProcessLauncher launcher,
         IOptions<OrchestratorOptions> options)
     {
-        if (lobby is null)
-            return Results.BadRequest("Lobby payload is required.");
+        if (string.IsNullOrWhiteSpace(lobbyCode))
+            return Results.BadRequest("lobbyCode must not be empty.");
 
-        if (string.IsNullOrWhiteSpace(lobby.LobbyCode))
-            return Results.BadRequest("LobbyCode must not be empty.");
+        using var reader = new StreamReader(request.Body);
+        var body = await reader.ReadToEndAsync();
 
-        store.Set(lobby.LobbyCode, lobby);
+        store.Set(lobbyCode, body);
 
         var opts = options.Value;
-        var args = $"{opts.UnityServerBaseArgs} --lobbyCode {lobby.LobbyCode} --orchestratorUrl {opts.OrchestratorUrl}";
+        var args = $"{opts.UnityServerBaseArgs} --lobbyCode {lobbyCode} --orchestratorUrl {opts.OrchestratorUrl}";
         launcher.Launch(opts.UnityServerPath, args.Trim());
 
         return Results.Accepted();
@@ -39,7 +38,9 @@ public static class LobbyEndpoints
 
     private static IResult HandleGetLobby(string lobbyCode, ILobbyStore store)
     {
-        var lobby = store.Get(lobbyCode);
-        return lobby is not null ? Results.Ok(lobby) : Results.NotFound();
+        var body = store.Get(lobbyCode);
+        return body is not null
+            ? Results.Content(body, "application/json")
+            : Results.NotFound();
     }
 }
