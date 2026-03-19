@@ -30,7 +30,7 @@ public static class LobbyEndpoints
         store.Set(lobbyCode, body);
 
         var opts = options.Value;
-        var args = $"{opts.UnityServerBaseArgs} --lobbyCode {lobbyCode} --orchestratorUrl {opts.OrchestratorUrl}";
+        var args = $"{opts.UnityServerBaseArgs} -lobbyCode {lobbyCode} -orchestratorUrl {opts.OrchestratorUrl}";
         launcher.Launch(opts.UnityServerPath, args.Trim());
 
         return Results.Accepted();

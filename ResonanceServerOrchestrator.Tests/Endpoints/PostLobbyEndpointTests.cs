@@ -55,7 +55,7 @@ public sealed class PostLobbyEndpointTests : IDisposable
 
         _factory.LauncherSubstitute.Received(1).Launch(
             Arg.Any<string>(),
-            Arg.Is<string>(args => args.Contains("--lobbyCode LAUNCH1")));
+            Arg.Is<string>(args => args.Contains("-lobbyCode LAUNCH1")));
     }
 
     [Fact]
