@@ -1,0 +1,6 @@
+services:
+  orchestrator:
+    build:
+      dockerfile: Dockerfile
+    ports:
+      - "9000:9000"
