@@ -13,7 +13,15 @@ builder.Services.Configure<OrchestratorOptions>(
     builder.Configuration.GetSection(OrchestratorOptions.SectionName));
 
 builder.Services.AddSingleton<ILobbyStore, InMemoryLobbyStore>();
-builder.Services.AddSingleton<IProcessLauncher, UnityProcessLauncher>();
+
+var launcherType = builder.Configuration
+    .GetSection(OrchestratorOptions.SectionName)
+    .GetValue<LauncherType>(nameof(OrchestratorOptions.LauncherType));
+
+if (launcherType == LauncherType.Docker)
+    builder.Services.AddSingleton<IProcessLauncher, DockerProcessLauncher>();
+else
+    builder.Services.AddSingleton<IProcessLauncher, UnityProcessLauncher>();
 
 var app = builder.Build();
 

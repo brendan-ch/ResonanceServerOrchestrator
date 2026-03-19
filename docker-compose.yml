@@ -4,3 +4,7 @@ services:
       dockerfile: Dockerfile
     ports:
       - "9000:9000"
+    volumes:
+      - ./Server:/opt/resonance/server
+    environment:
+      - Orchestrator__UnityServerDockerContextPath=/opt/resonance/server

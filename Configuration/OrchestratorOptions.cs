@@ -1,3 +1,5 @@
+using ResonanceServerOrchestrator.Services;
+
 namespace ResonanceServerOrchestrator.Configuration;
 
 public sealed record OrchestratorOptions
@@ -7,4 +9,6 @@ public sealed record OrchestratorOptions
     public string UnityServerPath { get; init; } = string.Empty;
     public string UnityServerBaseArgs { get; init; } = string.Empty;
     public string OrchestratorUrl { get; init; } = string.Empty;
+    public string UnityServerDockerContextPath { get; init; } = string.Empty;
+    public LauncherType LauncherType { get; init; } = LauncherType.Process;
 }
