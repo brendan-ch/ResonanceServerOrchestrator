@@ -8,10 +8,10 @@ public sealed class InMemoryLobbyStoreTests
     private readonly InMemoryLobbyStore _store = new();
 
     [Fact]
-    public void Set_ThenGet_ReturnsSameString()
+    public void TrySet_ThenGet_ReturnsSameString()
     {
         const string body = """{"name":"Test","players":4}""";
-        _store.Set("TEST01", body);
+        _store.TrySet("TEST01", body);
 
         var result = _store.Get("TEST01");
 
@@ -27,13 +27,31 @@ public sealed class InMemoryLobbyStoreTests
     }
 
     [Fact]
-    public void Set_OverwritesExistingEntry()
+    public void TrySet_NewCode_ReturnsTrue()
     {
-        _store.Set("TEST01", """{"name":"Original"}""");
-        _store.Set("TEST01", """{"name":"Updated"}""");
+        var result = _store.TrySet("NEW01", """{"name":"New"}""");
 
-        var result = _store.Get("TEST01");
+        Assert.True(result);
+    }
 
-        Assert.Equal("""{"name":"Updated"}""", result);
+    [Fact]
+    public void TrySet_ExistingCode_ReturnsFalse()
+    {
+        _store.TrySet("DUP01", """{"name":"Original"}""");
+
+        var result = _store.TrySet("DUP01", """{"name":"Duplicate"}""");
+
+        Assert.False(result);
+    }
+
+    [Fact]
+    public void TrySet_ExistingCode_DoesNotOverwrite()
+    {
+        _store.TrySet("DUP02", """{"name":"Original"}""");
+        _store.TrySet("DUP02", """{"name":"Updated"}""");
+
+        var result = _store.Get("DUP02");
+
+        Assert.Equal("""{"name":"Original"}""", result);
     }
 }

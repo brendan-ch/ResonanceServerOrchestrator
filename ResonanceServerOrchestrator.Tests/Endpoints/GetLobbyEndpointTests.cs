@@ -25,7 +25,7 @@ public sealed class GetLobbyEndpointTests : IDisposable
     private void SeedStore(string lobbyCode, string body)
     {
         var store = _factory.Services.GetRequiredService<ILobbyStore>();
-        store.Set(lobbyCode, body);
+        store.TrySet(lobbyCode, body);
     }
 
     [Fact]

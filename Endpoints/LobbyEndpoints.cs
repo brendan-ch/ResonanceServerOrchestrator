@@ -27,7 +27,8 @@ public static class LobbyEndpoints
         using var reader = new StreamReader(request.Body);
         var body = await reader.ReadToEndAsync();
 
-        store.Set(lobbyCode, body);
+        if (!store.TrySet(lobbyCode, body))
+            return Results.StatusCode(403);
 
         var opts = options.Value;
         var args = $"{opts.UnityServerBaseArgs} -lobbyCode {lobbyCode} -orchestratorUrl {opts.OrchestratorUrl}";
