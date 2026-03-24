@@ -20,6 +20,8 @@ var launcherType = builder.Configuration
 
 if (launcherType == LauncherType.Docker)
     builder.Services.AddSingleton<IProcessLauncher, DockerProcessLauncher>();
+else if (launcherType == LauncherType.None)
+    builder.Services.AddSingleton<IProcessLauncher, NullProcessLauncher>();
 else
     builder.Services.AddSingleton<IProcessLauncher, UnityProcessLauncher>();
 
