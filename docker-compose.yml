@@ -7,6 +7,3 @@ services:
       - "${PORT:-9000}:9000"
     volumes:
       - ./Server:/opt/resonance/server
-    environment:
-      - Orchestrator__LauncherType=Docker
-      - Orchestrator__UnityServerDockerContextPath=/opt/resonance/server
