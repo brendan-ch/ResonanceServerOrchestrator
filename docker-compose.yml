@@ -8,5 +8,5 @@ services:
     volumes:
       - ./Server:/opt/resonance/server
     environment:
-      - Orchestrator__UnityServerDockerContextPath=${UNITY_SERVER_DOCKER_CONTEXT_PATH}
-      - Orchestrator__UnityServerPath=${UNITY_SERVER_PATH}
+      - Orchestrator__LauncherType=Docker
+      - Orchestrator__UnityServerDockerContextPath=/opt/resonance/server
