@@ -5,7 +5,7 @@ namespace ResonanceServerOrchestrator.Services;
 
 public sealed class UnityProcessLauncher : IProcessLauncher
 {
-    public void Launch(string path, string arguments)
+    public IGameInstance Launch(string path, string arguments)
     {
         var startInfo = new ProcessStartInfo
         {
@@ -20,7 +20,7 @@ public sealed class UnityProcessLauncher : IProcessLauncher
                 ?? throw new InvalidOperationException(
                     $"Failed to start Unity server process at path: {path}");
 
-            _ = process;
+            return new ProcessGameInstance(process);
         }
         catch (Win32Exception ex)
         {

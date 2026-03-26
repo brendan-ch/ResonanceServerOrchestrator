@@ -2,5 +2,5 @@ namespace ResonanceServerOrchestrator.Services;
 
 public interface IProcessLauncher
 {
-    void Launch(string path, string arguments);
+    IGameInstance Launch(string path, string arguments);
 }

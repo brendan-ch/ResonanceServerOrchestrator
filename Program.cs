@@ -1,7 +1,10 @@
+using System.Runtime.CompilerServices;
 using ResonanceServerOrchestrator.Configuration;
 using ResonanceServerOrchestrator.Endpoints;
 using ResonanceServerOrchestrator.Services;
 using ResonanceServerOrchestrator.Stores;
+
+[assembly: InternalsVisibleTo("ResonanceServerOrchestrator.Tests")]
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -12,6 +15,7 @@ if (!string.IsNullOrEmpty(port))
 builder.Services.Configure<OrchestratorOptions>(
     builder.Configuration.GetSection(OrchestratorOptions.SectionName));
 
+builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddSingleton<ILobbyStore, InMemoryLobbyStore>();
 
 var launcherType = builder.Configuration
@@ -24,6 +28,8 @@ else if (launcherType == LauncherType.None)
     builder.Services.AddSingleton<IProcessLauncher, NullProcessLauncher>();
 else
     builder.Services.AddSingleton<IProcessLauncher, UnityProcessLauncher>();
+
+builder.Services.AddHostedService<LobbyCleanupService>();
 
 var app = builder.Build();
 

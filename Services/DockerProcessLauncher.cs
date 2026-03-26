@@ -18,7 +18,7 @@ public sealed class DockerProcessLauncher : IProcessLauncher
         _imageBuilt = new Lazy<bool>(BuildImage);
     }
 
-    public void Launch(string path, string arguments)
+    public IGameInstance Launch(string path, string arguments)
     {
         _ = _imageBuilt.Value;
 
@@ -35,7 +35,7 @@ public sealed class DockerProcessLauncher : IProcessLauncher
                 ?? throw new InvalidOperationException(
                     $"Failed to start Docker container for image: {ImageName}");
 
-            _ = process;
+            return new ProcessGameInstance(process);
         }
         catch (Win32Exception ex)
         {

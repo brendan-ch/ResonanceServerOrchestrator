@@ -27,12 +27,17 @@ public static class LobbyEndpoints
         using var reader = new StreamReader(request.Body);
         var body = await reader.ReadToEndAsync();
 
+        var opts = options.Value;
+
+        if (opts.MaxLobbies > 0 && store.ActiveCount >= opts.MaxLobbies)
+            return Results.StatusCode(403);
+
         if (!store.TrySet(lobbyCode, body))
             return Results.StatusCode(403);
 
-        var opts = options.Value;
         var args = $"{opts.UnityServerBaseArgs} -lobbyCode {lobbyCode} -orchestratorUrl {opts.OrchestratorUrl}";
-        launcher.Launch(opts.UnityServerPath, args.Trim());
+        var instance = launcher.Launch(opts.UnityServerPath, args.Trim());
+        store.SetInstance(lobbyCode, instance);
 
         return Results.Accepted();
     }

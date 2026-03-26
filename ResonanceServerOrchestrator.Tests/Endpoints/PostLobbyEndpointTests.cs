@@ -65,4 +65,17 @@ public sealed class PostLobbyEndpointTests : IDisposable
 
         Assert.Equal(HttpStatusCode.Accepted, response.StatusCode);
     }
+
+    [Fact]
+    public async Task Post_Returns403_WhenMaxLobbiesReached()
+    {
+        using var factory = new OrchestratorWebApplicationFactory(maxLobbies: 1);
+        using var client = factory.CreateClient();
+
+        var first = await client.PostAsync("/lobbies/ROOM1", JsonContent("{}"));
+        Assert.Equal(HttpStatusCode.Accepted, first.StatusCode);
+
+        var second = await client.PostAsync("/lobbies/ROOM2", JsonContent("{}"));
+        Assert.Equal(HttpStatusCode.Forbidden, second.StatusCode);
+    }
 }
