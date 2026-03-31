@@ -1,0 +1,43 @@
+name: "Deploy test server"
+
+on:
+  workflow_dispatch:
+    inputs:
+      port:
+        description: "The port number to expose for the Docker compose file."
+        required: true
+        default: 9001
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Check out repository
+      uses: actions/checkout@v3
+
+    - name: Set up SSH key
+      run: |
+        mkdir -p ~/.ssh
+        echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
+        chmod 600 ~/.ssh/id_ed25519
+        ssh-keyscan ${{ vars.HOST }} >> ~/.ssh/known_hosts
+
+    - name: Remove directory from server
+      run: |
+        ssh -i ~/.ssh/id_ed25519 ${{ vars.USERNAME }}@${{ vars.HOST }} << 'EOF'
+          rm -rf ~/${{ vars.DIRECTORY_NAME }}-port-${{ github.event.inputs.port }}
+        EOF
+
+    # Avoid needing to set up SSH access to GitHub for this user
+    - name: Transfer repository files to server
+      run: |
+        scp -i ~/.ssh/id_ed25519 -r ./* ${{ vars.USERNAME }}@${{ vars.HOST }}:~/${{ vars.DIRECTORY_NAME }}-port-${{ github.event.inputs.port }}
+
+    - name: Deploy on server with Docker
+      run: |
+        ssh -i ~/.ssh/id_ed25519 ${{ vars.USERNAME }}@${{ vars.HOST }} << 'EOF'
+          cd ~/${{ vars.DIRECTORY_NAME }}-port-${{ github.event.inputs.port }}
+          docker compose down --remove-orphans
+          PORT=${{ github.event.inputs.port }} docker compose up -d --build
+        EOF
