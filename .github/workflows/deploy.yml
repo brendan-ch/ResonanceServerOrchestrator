@@ -2,6 +2,8 @@ name: "Deploy to server"
 
 on:
   workflow_dispatch:
+  schedule:
+    - cron: '30 5 * * *'
 
 jobs:
   deploy:
