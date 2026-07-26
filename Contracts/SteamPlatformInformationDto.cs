@@ -3,8 +3,8 @@ namespace ResonanceServerOrchestrator.Contracts;
 public sealed record SteamPlatformInformationDto : IPlatformInformationDto
 {
     public Platform Platform { get; init; }
-    public string PlatformId { get; init; }
-    public string LobbyId { get; init; }
+    public string PlatformUserId { get; init; }
+    public string PlatformLobbyId { get; init; }
 
     /// <summary>
     /// A user authentication token checked against the Steam web API.
