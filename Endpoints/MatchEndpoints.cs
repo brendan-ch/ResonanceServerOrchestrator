@@ -1,5 +1,7 @@
 using Asp.Versioning;
 using Asp.Versioning.Builder;
+using Microsoft.Extensions.Options;
+using ResonanceServerOrchestrator.Configuration;
 using ResonanceServerOrchestrator.Contracts;
 using ResonanceServerOrchestrator.Services;
 using ResonanceServerOrchestrator.Stores;
@@ -8,6 +10,8 @@ namespace ResonanceServerOrchestrator.Endpoints;
 
 public static class MatchEndpoints
 {
+    public const string ClientRateLimiterPolicy = "game-client";
+
     public static IEndpointRouteBuilder MapMatchEndpoints(
         this IEndpointRouteBuilder app, ApiVersionSet versionSet)
     {
@@ -17,6 +21,7 @@ public static class MatchEndpoints
 
         matches.MapPost("/join", HandleJoinMatch).DisableRequestTimeout();
         matches.MapPost("/leave", HandleLeaveMatch);
+        matches.RequireRateLimiting(ClientRateLimiterPolicy);
 
         return app;
     }
@@ -26,11 +31,12 @@ public static class MatchEndpoints
         IMatchStore store,
         PlayerTicketAuthenticator authenticator,
         MatchLaunchCoordinator launchCoordinator,
+        IOptions<OrchestratorOptions> options,
         CancellationToken cancellationToken)
     {
-        var problem = JoinMatchRequestValidator.DescribeFirstProblem(request);
-        if (problem is not null)
-            return Results.BadRequest(problem);
+        if (!JoinMatchRequestValidator.TryValidate(
+                request, options.Value, out var joiningPlayer, out var problem))
+            return Results.Problem(detail: problem, statusCode: StatusCodes.Status400BadRequest);
 
         var user = request.PlatformUserInformation;
         var lobby = new LobbyKey(user.Platform, user.PlatformLobbyId);
@@ -45,13 +51,10 @@ public static class MatchEndpoints
                 statusCode: StatusCodes.Status401Unauthorized);
         }
 
-        var username = request.ExpectedLobbyPlayers
-            .First(player => player.Identity == user.Identity).Username;
-
         var outcome = store.TryJoin(
             lobby,
             user.Identity,
-            username,
+            joiningPlayer.Username,
             request.ExpectedLobbyPlayers.Select(player => player.Identity).ToList());
 
         return outcome switch
@@ -102,12 +105,14 @@ public static class MatchEndpoints
         LeaveMatchDto request,
         IMatchStore store,
         PlayerTicketAuthenticator authenticator,
+        IOptions<OrchestratorOptions> options,
         CancellationToken cancellationToken)
     {
         var user = request.PlatformUserInformation;
 
-        if (user is null || string.IsNullOrWhiteSpace(user.PlatformUserId))
-            return Results.BadRequest("platformUserInformation.platformUserId must not be empty.");
+        var problem = PlatformUserValidator.DescribeFirstProblem(user, options.Value);
+        if (problem is not null)
+            return Results.Problem(detail: problem, statusCode: StatusCodes.Status400BadRequest);
 
         var authenticationFailure =
             await authenticator.DescribeAuthenticationFailureAsync(user, cancellationToken);

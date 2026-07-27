@@ -9,6 +9,7 @@ services:
     volumes:
       - ./Server:/opt/resonance/server
     environment:
+      ASPNETCORE_ENVIRONMENT: Production
       Orchestrator__GameServerHost: "${GAME_SERVER_HOST:-localhost}"
       Orchestrator__GameServerPort: "${GAME_SERVER_PORT:-7777}"
       Orchestrator__OrchestratorUrl: "${ORCHESTRATOR_URL:-http://localhost:9000}"

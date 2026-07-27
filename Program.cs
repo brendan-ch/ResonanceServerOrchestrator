@@ -19,7 +19,7 @@ if (!string.IsNullOrEmpty(port))
 
 builder.Services.AddOptions<OrchestratorOptions>()
     .Bind(builder.Configuration.GetSection(OrchestratorOptions.SectionName))
-    .ValidateOrchestratorOptions();
+    .ValidateOrchestratorOptions(builder.Environment);
 
 builder.Services.ConfigureHttpJsonOptions(options =>
     options.SerializerOptions.ApplyOrchestratorConventions());
@@ -36,14 +36,25 @@ builder.Services.AddRateLimiter(options =>
 {
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
     options.AddPolicy(ServerEndpoints.RateLimiterPolicy, context =>
-        RateLimitPartition.GetFixedWindowLimiter(
-            context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
-            _ => new FixedWindowRateLimiterOptions
-            {
-                PermitLimit = 60,
-                Window = TimeSpan.FromMinutes(1),
-                QueueLimit = 0,
-            }));
+        FixedWindowByCaller(context, permitLimit: 60));
+    options.AddPolicy(MatchEndpoints.ClientRateLimiterPolicy, context =>
+        FixedWindowByCaller(context, permitLimit: 30));
+});
+
+static RateLimitPartition<string> FixedWindowByCaller(HttpContext context, int permitLimit) =>
+    RateLimitPartition.GetFixedWindowLimiter(
+        context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+        _ => new FixedWindowRateLimiterOptions
+        {
+            PermitLimit = permitLimit,
+            Window = TimeSpan.FromMinutes(1),
+            QueueLimit = 0,
+        });
+
+builder.WebHost.ConfigureKestrel(kestrel =>
+{
+    kestrel.Limits.MaxConcurrentConnections = 512;
+    kestrel.Limits.MaxRequestBodySize = 256 * 1024;
 });
 
 builder.Services.AddSingleton(TimeProvider.System);
@@ -68,7 +79,9 @@ var steamCredentialCheckDisabled = builder.Configuration
 if (steamCredentialCheckDisabled)
     builder.Services.AddSingleton<ISteamTicketValidator, DisabledSteamTicketValidator>();
 else
-    builder.Services.AddHttpClient<ISteamTicketValidator, SteamWebApiTicketValidator>();
+    builder.Services
+        .AddHttpClient<ISteamTicketValidator, SteamWebApiTicketValidator>()
+        .RemoveAllLoggers();
 
 var app = builder.Build();
 

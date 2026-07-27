@@ -2,10 +2,6 @@ namespace ResonanceServerOrchestrator.Services;
 
 public sealed class NullGameInstance : IGameInstance
 {
-    public static readonly NullGameInstance Instance = new();
-
-    private NullGameInstance() { }
-
     public bool HasExited => false;
 
     public void Stop() { }

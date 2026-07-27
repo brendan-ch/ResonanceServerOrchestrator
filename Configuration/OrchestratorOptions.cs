@@ -22,6 +22,11 @@ public sealed record OrchestratorOptions
     public double TombstoneRetentionMinutes { get; init; } = 10;
     public double CleanupIntervalSeconds { get; init; } = 60;
 
+    public int MaxExpectedLobbyPlayers { get; init; } = 16;
+    public int MaxPlatformIdentifierLength { get; init; } = 64;
+    public int MaxUsernameLength { get; init; } = 64;
+    public int MaxAuthenticationTicketHexLength { get; init; } = 2048;
+
     public bool SteamCredentialCheckDisabled { get; init; }
     public string SteamPublisherWebApiKey { get; init; } = string.Empty;
     public uint SteamAppId { get; init; }

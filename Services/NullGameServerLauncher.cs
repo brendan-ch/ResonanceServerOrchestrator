@@ -4,5 +4,5 @@ public sealed class NullGameServerLauncher : IGameServerLauncher
 {
     public bool ReportsReadiness => false;
 
-    public IGameInstance Launch(GameServerLaunchSpec spec) => NullGameInstance.Instance;
+    public IGameInstance Launch(GameServerLaunchSpec spec) => new NullGameInstance();
 }

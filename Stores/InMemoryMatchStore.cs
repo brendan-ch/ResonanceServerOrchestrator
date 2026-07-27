@@ -252,6 +252,10 @@ internal sealed class InMemoryMatchStore(IOptions<OrchestratorOptions> options, 
         string username,
         IReadOnlyList<PlayerIdentity> expectedRoster)
     {
+        if (match.Status is MatchStatus.Started)
+            return new Rejected(
+                JoinFailureReason.MatchAlreadyStarted, match.JoinedCount, match.ExpectedCount);
+
         if (!match.CanonicalRosterMatches(expectedRoster))
         {
             var rejection = new Rejected(
@@ -259,10 +263,6 @@ internal sealed class InMemoryMatchStore(IOptions<OrchestratorOptions> options, 
             DestroyWithFailure(match, JoinFailureReason.RosterMismatch);
             return rejection;
         }
-
-        if (match.Status is MatchStatus.Started)
-            return new Rejected(
-                JoinFailureReason.MatchAlreadyStarted, match.JoinedCount, match.ExpectedCount);
 
         return match.Members.ContainsKey(identity)
             ? ReplaceMember(match, identity, username)
@@ -407,13 +407,13 @@ internal sealed class InMemoryMatchStore(IOptions<OrchestratorOptions> options, 
 
         match.Instance?.Stop();
 
+        _tombstones[matchId] = new MatchTombstone(HashMatchKey(match.MatchKey), timeProvider.GetUtcNow());
+
         _matchesById.TryRemove(matchId, out _);
         _matchIdByLobby.TryRemove(new KeyValuePair<LobbyKey, Guid>(match.Lobby, matchId));
 
         foreach (var identity in match.Members.Keys)
             _matchIdByPlayer.TryRemove(new KeyValuePair<PlayerIdentity, Guid>(identity, matchId));
-
-        _tombstones[matchId] = new MatchTombstone(HashMatchKey(match.MatchKey), timeProvider.GetUtcNow());
     }
 
     private MatchState? TryFindMatchInLobby(LobbyKey lobby) =>

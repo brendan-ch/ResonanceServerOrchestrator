@@ -46,9 +46,14 @@ public sealed class SteamWebApiTicketValidatorTests : IDisposable
 
         var requestUri = Assert.IsType<Uri>(handler.LastRequestUri);
         Assert.Contains("ISteamUserAuth/AuthenticateUserTicket", requestUri.AbsolutePath);
-        Assert.Contains($"key={ConfiguredPublisherKey}", requestUri.Query);
-        Assert.Contains($"appid={ConfiguredAppId}", requestUri.Query);
-        Assert.Contains($"ticket={TicketHex}", requestUri.Query);
+        Assert.Equal(HttpMethod.Post, handler.LastRequestMethod);
+
+        Assert.Empty(requestUri.Query);
+
+        var body = Assert.IsType<string>(handler.LastRequestBody);
+        Assert.Contains($"key={ConfiguredPublisherKey}", body);
+        Assert.Contains($"appid={ConfiguredAppId}", body);
+        Assert.Contains($"ticket={TicketHex}", body);
     }
 
     [Fact]
@@ -244,11 +249,20 @@ public sealed class SteamWebApiTicketValidatorTests : IDisposable
     {
         public Uri? LastRequestUri { get; private set; }
 
-        protected override Task<HttpResponseMessage> SendAsync(
+        public HttpMethod? LastRequestMethod { get; private set; }
+
+        public string? LastRequestBody { get; private set; }
+
+        protected override async Task<HttpResponseMessage> SendAsync(
             HttpRequestMessage request, CancellationToken cancellationToken)
         {
             LastRequestUri = request.RequestUri;
-            return respond(request, cancellationToken);
+            LastRequestMethod = request.Method;
+            LastRequestBody = request.Content is null
+                ? null
+                : await request.Content.ReadAsStringAsync(cancellationToken);
+
+            return await respond(request, cancellationToken);
         }
     }
 }

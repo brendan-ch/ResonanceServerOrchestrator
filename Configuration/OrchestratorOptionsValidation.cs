@@ -6,8 +6,15 @@ namespace ResonanceServerOrchestrator.Configuration;
 public static class OrchestratorOptionsValidation
 {
     public static OptionsBuilder<OrchestratorOptions> ValidateOrchestratorOptions(
-        this OptionsBuilder<OrchestratorOptions> builder) =>
+        this OptionsBuilder<OrchestratorOptions> builder, IHostEnvironment environment) =>
         builder
+            .Validate(
+                options => !options.SteamCredentialCheckDisabled || environment.IsDevelopment(),
+                $"{Key(nameof(OrchestratorOptions.SteamCredentialCheckDisabled))} may only be true " +
+                "in the Development environment. Outside it, disabling the check makes every " +
+                "player identity attacker-controlled.")
+            .Validate(options => options.MaxExpectedLobbyPlayers > 0,
+                $"{Key(nameof(OrchestratorOptions.MaxExpectedLobbyPlayers))} must be positive.")
             .Validate(SteamCredentialsArePresentWhenTheCheckIsEnabled,
                 $"{Key(nameof(OrchestratorOptions.SteamPublisherWebApiKey))} and " +
                 $"{Key(nameof(OrchestratorOptions.SteamAppId))} are required unless " +

@@ -8,7 +8,7 @@ namespace ResonanceServerOrchestrator.Tests.Serialization;
 public sealed class PlatformUserInformationJsonConverterTests
 {
     private static readonly JsonSerializerOptions SerializerOptions =
-        new JsonSerializerOptions(JsonSerializerDefaults.Web).AddPlatformUserInformationConverter();
+        new JsonSerializerOptions(JsonSerializerDefaults.Web).ApplyOrchestratorConventions();
 
     [Fact]
     public void Read_PlatformDiscriminatorFirst_BindsTheSteamShape()
@@ -172,8 +172,8 @@ public sealed class PlatformUserInformationJsonConverterTests
 
         using var document = JsonDocument.Parse(written);
         Assert.Equal(
-            (int)Platform.Steam,
-            document.RootElement.GetProperty("platform").GetInt32());
+            nameof(Platform.Steam),
+            document.RootElement.GetProperty("platform").GetString());
     }
 
     private static IPlatformUserInformationDto? Deserialize(string json) =>

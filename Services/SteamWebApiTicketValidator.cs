@@ -29,8 +29,8 @@ public sealed class SteamWebApiTicketValidator(
 
         try
         {
-            using var response = await httpClient.GetAsync(
-                BuildAuthenticateUserTicketUri(ticketHex), linkedCancellation.Token);
+            using var request = BuildAuthenticateUserTicketRequest(ticketHex);
+            using var response = await httpClient.SendAsync(request, linkedCancellation.Token);
 
             if (!response.IsSuccessStatusCode)
                 return FailClosed($"Steam answered with HTTP {(int)response.StatusCode}.");
@@ -54,13 +54,22 @@ public sealed class SteamWebApiTicketValidator(
         {
             return FailClosed($"The response from Steam could not be read: {exception.Message}");
         }
+        catch (Exception exception)
+        {
+            return FailClosed($"Validating the ticket against Steam failed: {exception.Message}");
+        }
     }
 
-    private Uri BuildAuthenticateUserTicketUri(string ticketHex) =>
-        new($"{AuthenticateUserTicketUrl}" +
-            $"?key={Uri.EscapeDataString(options.Value.SteamPublisherWebApiKey)}" +
-            $"&appid={options.Value.SteamAppId}" +
-            $"&ticket={Uri.EscapeDataString(ticketHex)}");
+    private HttpRequestMessage BuildAuthenticateUserTicketRequest(string ticketHex) =>
+        new(HttpMethod.Post, AuthenticateUserTicketUrl)
+        {
+            Content = new FormUrlEncodedContent(new Dictionary<string, string>
+            {
+                ["key"] = options.Value.SteamPublisherWebApiKey,
+                ["appid"] = options.Value.SteamAppId.ToString(),
+                ["ticket"] = ticketHex,
+            }),
+        };
 
     private SteamTicketValidationResult Interpret(string payload)
     {

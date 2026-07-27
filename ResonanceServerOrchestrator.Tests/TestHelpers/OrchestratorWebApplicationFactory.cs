@@ -37,7 +37,7 @@ internal sealed class OrchestratorWebApplicationFactory : WebApplicationFactory<
             .Returns(call =>
             {
                 _launchObserved.TrySetResult(call.Arg<GameServerLaunchSpec>());
-                return NullGameInstance.Instance;
+                return new NullGameInstance();
             });
     }
 
