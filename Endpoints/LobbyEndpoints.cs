@@ -9,8 +9,9 @@ public static class LobbyEndpoints
 {
     public static IEndpointRouteBuilder MapLobbyEndpoints(this IEndpointRouteBuilder app)
     {
-        app.MapPost("/lobbies/{lobbyCode}", HandlePostLobby);
-        app.MapGet("/lobbies/{lobbyCode}", HandleGetLobby);
+        var lobbies = app.MapGroup("/lobbies");
+        lobbies.MapPost("/{lobbyCode}", HandlePostLobby);
+        lobbies.MapGet("/{lobbyCode}", HandleGetLobby);
         return app;
     }
 

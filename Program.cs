@@ -34,6 +34,7 @@ builder.Services.AddHostedService<LobbyCleanupService>();
 var app = builder.Build();
 
 app.MapLobbyEndpoints();
+app.MapMatchEndpoints();
 
 app.Run();
 
