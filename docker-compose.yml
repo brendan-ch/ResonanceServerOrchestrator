@@ -5,5 +5,13 @@ services:
     platform: linux/amd64
     ports:
       - "${PORT:-9000}:9000"
+      - "${GAME_SERVER_PORT:-7777}:${GAME_SERVER_PORT:-7777}/udp"
     volumes:
       - ./Server:/opt/resonance/server
+    environment:
+      Orchestrator__GameServerHost: "${GAME_SERVER_HOST:-localhost}"
+      Orchestrator__GameServerPort: "${GAME_SERVER_PORT:-7777}"
+      Orchestrator__OrchestratorUrl: "${ORCHESTRATOR_URL:-http://localhost:9000}"
+      Orchestrator__SteamPublisherWebApiKey: "${STEAM_PUBLISHER_WEB_API_KEY:-}"
+      Orchestrator__SteamAppId: "${STEAM_APP_ID:-0}"
+      Orchestrator__SteamCredentialCheckDisabled: "${STEAM_CREDENTIAL_CHECK_DISABLED:-false}"
