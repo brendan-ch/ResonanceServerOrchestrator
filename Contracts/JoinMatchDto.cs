@@ -1,6 +1,6 @@
 namespace ResonanceServerOrchestrator.Contracts;
 
 public sealed record JoinMatchDto(
-    IPlatformInformationDto PlatformInformation,
+    IPlatformUserInformationDto PlatformUserInformation,
     ExpectedLobbyPlayerDto[] ExpectedLobbyPlayers
 );
