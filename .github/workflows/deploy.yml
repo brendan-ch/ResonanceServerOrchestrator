@@ -40,6 +40,17 @@ jobs:
       run: |
         scp -i ~/.ssh/id_ed25519 -r ./* ${{ vars.USERNAME }}@${{ vars.HOST }}:~/${{ vars.DIRECTORY_NAME }}
 
+    - name: Write orchestrator environment file
+      run: |
+        ssh -i ~/.ssh/id_ed25519 ${{ vars.USERNAME }}@${{ vars.HOST }} \
+          "cat > ~/${{ vars.DIRECTORY_NAME }}/.env" << EOF
+        STEAM_PUBLISHER_WEB_API_KEY=${{ secrets.STEAM_PUBLISHER_WEB_API_KEY }}
+        STEAM_APP_ID=${{ vars.STEAM_APP_ID }}
+        GAME_SERVER_HOST=${{ vars.GAME_SERVER_HOST }}
+        GAME_SERVER_PORT=${{ vars.GAME_SERVER_PORT }}
+        ORCHESTRATOR_URL=${{ vars.ORCHESTRATOR_URL }}
+        EOF
+
     - name: Deploy on server with Docker
       run: |
         ssh -i ~/.ssh/id_ed25519 ${{ vars.USERNAME }}@${{ vars.HOST }} << 'EOF'

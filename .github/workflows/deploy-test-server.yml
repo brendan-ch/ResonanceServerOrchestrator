@@ -43,6 +43,16 @@ jobs:
       run: |
         scp -i ~/.ssh/id_ed25519 -r ./* ${{ vars.USERNAME }}@${{ vars.HOST }}:~/${{ vars.DIRECTORY_NAME }}-port-${{ github.event.inputs.port }}
 
+    - name: Write orchestrator environment file
+      run: |
+        ssh -i ~/.ssh/id_ed25519 ${{ vars.USERNAME }}@${{ vars.HOST }} \
+          "cat > ~/${{ vars.DIRECTORY_NAME }}-port-${{ github.event.inputs.port }}/.env" << EOF
+        STEAM_CREDENTIAL_CHECK_DISABLED=true
+        GAME_SERVER_HOST=${{ vars.GAME_SERVER_HOST }}
+        GAME_SERVER_PORT=${{ vars.GAME_SERVER_PORT }}
+        ORCHESTRATOR_URL=${{ vars.ORCHESTRATOR_URL }}
+        EOF
+
     - name: Deploy on server with Docker
       run: |
         ssh -i ~/.ssh/id_ed25519 ${{ vars.USERNAME }}@${{ vars.HOST }} << 'EOF'
