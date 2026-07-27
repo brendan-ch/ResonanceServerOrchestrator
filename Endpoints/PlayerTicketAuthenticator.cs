@@ -7,6 +7,8 @@ namespace ResonanceServerOrchestrator.Endpoints;
 
 internal sealed class PlayerTicketAuthenticator(
     ISteamTicketValidator ticketValidator,
+    // add other authenticators here as needed in the future, and
+    // add abstraction logic
     IOptions<OrchestratorOptions> options,
     ILogger<PlayerTicketAuthenticator> logger)
 {
