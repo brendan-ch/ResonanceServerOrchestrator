@@ -1,0 +1,102 @@
+using System.Net;
+using System.Net.Http.Json;
+using ResonanceServerOrchestrator.Contracts;
+using ResonanceServerOrchestrator.Stores;
+using ResonanceServerOrchestrator.Tests.TestHelpers;
+using Xunit;
+
+namespace ResonanceServerOrchestrator.Tests.Endpoints;
+
+public sealed class LeaveMatchEndpointTests : IDisposable
+{
+    private static readonly TimeSpan TestBudget = TimeSpan.FromSeconds(20);
+
+    private const string LobbyId = "steam-lobby-1";
+    private const string FirstPlayer = "76561198000000001";
+    private const string SecondPlayer = "76561198000000002";
+    private static readonly string[] BothPlayers = [FirstPlayer, SecondPlayer];
+
+    private readonly OrchestratorWebApplicationFactory _factory = new();
+    private readonly HttpClient _client;
+
+    public LeaveMatchEndpointTests() => _client = _factory.CreateClient();
+
+    public void Dispose()
+    {
+        _client.Dispose();
+        _factory.Dispose();
+    }
+
+    [Fact]
+    public async Task Leave_WithNoMembership_ReturnsNotFound()
+    {
+        var response = await _client.PostLeaveAsync(
+            MatchRequests.LeaveBody(FirstPlayer, LobbyId));
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Leave_WhilePending_ReleasesEveryWaiterWithPeerLeft()
+    {
+        using var cancellation = new CancellationTokenSource(TestBudget);
+
+        var first = _client.PostJoinAsync(
+            MatchRequests.JoinBody(FirstPlayer, LobbyId, BothPlayers), cancellation.Token);
+
+        await _factory.Store
+            .WhenMemberCountReaches(new LobbyKey(Platform.Steam, LobbyId), 1)
+            .WaitAsync(TestBudget);
+
+        var leave = await _client.PostLeaveAsync(
+            MatchRequests.LeaveBody(FirstPlayer, LobbyId), cancellation.Token);
+
+        Assert.Equal(HttpStatusCode.NoContent, leave.StatusCode);
+
+        var firstResponse = await first;
+        Assert.Equal(HttpStatusCode.Conflict, firstResponse.StatusCode);
+
+        var failure = await firstResponse.Content
+            .ReadFromJsonAsync<JoinFailureDto>(MatchRequests.SerializerOptions);
+
+        Assert.Equal(JoinFailureReason.PeerLeft, failure!.Reason);
+    }
+
+    [Fact]
+    public async Task Leave_ByOnePlayerDropsTheWholePendingMatch()
+    {
+        using var cancellation = new CancellationTokenSource(TestBudget);
+
+        var first = _client.PostJoinAsync(
+            MatchRequests.JoinBody(FirstPlayer, LobbyId, BothPlayers), cancellation.Token);
+        var second = _client.PostJoinAsync(
+            MatchRequests.JoinBody(SecondPlayer, LobbyId, BothPlayers), cancellation.Token);
+
+        await _factory.Store
+            .WhenMemberCountReaches(new LobbyKey(Platform.Steam, LobbyId), 2)
+            .WaitAsync(TestBudget);
+
+        await _factory.LaunchObserved.WaitAsync(TestBudget);
+
+        await _client.PostLeaveAsync(
+            MatchRequests.LeaveBody(FirstPlayer, LobbyId), cancellation.Token);
+
+        var responses = await Task.WhenAll(first, second);
+
+        Assert.All(responses, response =>
+            Assert.Equal(HttpStatusCode.Conflict, response.StatusCode));
+    }
+
+    [Fact]
+    public async Task Leave_MissingPlatformUserId_ReturnsBadRequest()
+    {
+        var response = await _client.PostAsync(
+            MatchRequests.LeavePath,
+            new StringContent(
+                """{"platformUserInformation":{"platform":"Steam","platformUserId":"","platformLobbyId":"l"}}""",
+                System.Text.Encoding.UTF8,
+                "application/json"));
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+}
