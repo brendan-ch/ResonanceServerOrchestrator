@@ -2,13 +2,8 @@ namespace ResonanceServerOrchestrator.Contracts;
 
 public sealed record SteamPlatformUserInformationDto : IPlatformUserInformationDto
 {
-    public Platform Platform { get; init; }
-    public string PlatformUserId { get; init; }
-    public string PlatformLobbyId { get; init; }
-
-    /// <summary>
-    /// A user authentication token checked against the Steam web API.
-    /// Required if Steam validation is enabled in the environment.
-    /// </summary>
+    public Platform Platform => Platform.Steam;
+    public required string PlatformUserId { get; init; }
+    public required string PlatformLobbyId { get; init; }
     public string? AuthenticationTicketHex { get; init; }
 }

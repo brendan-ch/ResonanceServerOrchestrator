@@ -9,8 +9,20 @@ public sealed record OrchestratorOptions
     public string UnityServerPath { get; init; } = string.Empty;
     public string UnityServerBaseArgs { get; init; } = string.Empty;
     public string OrchestratorUrl { get; init; } = string.Empty;
-    public string UnityServerDockerContextPath { get; init; } = string.Empty;
-    public LauncherType LauncherType { get; init; } = LauncherType.Process;
-    public int MaxLobbies { get; init; } = 10;
-    public double LobbyTimeoutMinutes { get; init; } = 30;
+    public LauncherType LauncherType { get; init; } = LauncherType.LocalProcess;
+
+    public int MaxMatches { get; init; } = 1;
+    public double MatchTimeoutMinutes { get; init; } = 30;
+
+    public string GameServerHost { get; init; } = "localhost";
+    public int GameServerPort { get; init; } = 7777;
+
+    public double RosterAssemblyTimeoutSeconds { get; init; } = 45;
+    public double ServerReadyTimeoutSeconds { get; init; } = 30;
+    public double TombstoneRetentionMinutes { get; init; } = 10;
+    public double CleanupIntervalSeconds { get; init; } = 60;
+
+    public bool SteamCredentialCheckDisabled { get; init; }
+    public string SteamPublisherWebApiKey { get; init; } = string.Empty;
+    public uint SteamAppId { get; init; }
 }

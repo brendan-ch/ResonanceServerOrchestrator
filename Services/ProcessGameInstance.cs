@@ -15,15 +15,32 @@ public sealed class ProcessGameInstance : IGameInstance
         _process.Exited += OnProcessExited;
     }
 
+    public bool HasExited
+    {
+        get
+        {
+            try
+            {
+                return _process.HasExited;
+            }
+            catch (InvalidOperationException)
+            {
+                return true;
+            }
+        }
+    }
+
     public void Stop()
     {
         try
         {
             _process.Kill(entireProcessTree: true);
         }
-        catch
+        catch (InvalidOperationException)
         {
-            // Process may have already exited — safe to ignore.
+        }
+        catch (NotSupportedException)
+        {
         }
     }
 

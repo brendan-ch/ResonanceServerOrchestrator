@@ -2,6 +2,22 @@
 
 ASP.NET Core 9 HTTP service that creates game lobbies and launches Unity game server instances on demand.
 
+## In-progress migration: lobbies → matches
+
+The repository is migrating the client-facing model from **lobbies** to **matches**. Clients
+will interact with the orchestrator through the concept of a match; the lobby remains an
+upstream/platform concept rather than the orchestrator's public surface.
+
+Intended flow: a client that is in a *ready* lobby sends a `JoinMatchDto`
+(`Contracts/JoinMatchDto.cs`) — platform information plus the expected lobby players. The
+orchestrator places the client into a match and creates the corresponding game server.
+
+Both surfaces exist during the migration:
+
+- `Endpoints/LobbyEndpoints.cs` — the existing, working `/lobbies` surface.
+- `Endpoints/MatchEndpoints.cs` — the new `/matches` surface; handlers are stubs that
+  `throw new NotImplementedException()`.
+
 ## Build & Run
 
 ```bash

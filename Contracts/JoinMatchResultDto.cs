@@ -1,7 +1,8 @@
 namespace ResonanceServerOrchestrator.Contracts;
 
 public sealed record JoinMatchResultDto(
-    string MatchId,
-    Uri DedicatedServerBaseUrl,
+    Guid MatchId,
+    string DedicatedServerHost,
+    int DedicatedServerPort,
     string ServerAuthToken
 );

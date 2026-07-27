@@ -6,9 +6,11 @@ public sealed class NullGameInstance : IGameInstance
 
     private NullGameInstance() { }
 
+    public bool HasExited => false;
+
     public void Stop() { }
 
-#pragma warning disable CS0067 // Exited intentionally never raised on the null object
+#pragma warning disable CS0067
     public event EventHandler? Exited;
 #pragma warning restore CS0067
 }
