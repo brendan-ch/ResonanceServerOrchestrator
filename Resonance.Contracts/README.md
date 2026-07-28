@@ -13,18 +13,34 @@ Add to `Packages/manifest.json`:
   "https://github.com/brendan-ch/ResonanceServerOrchestrator.git?path=/Resonance.Contracts#contracts-v1.0.0"
 ```
 
-### Reference the assembly by name, not by GUID
+### Every file here needs a committed `.meta` — including new ones
 
-`.meta` files are deliberately **not** committed here, so the assembly definition's GUID is
-regenerated per machine. Every game assembly definition that references `Resonance.Contracts`
-must therefore have **"Use GUIDs" unchecked** in its Inspector:
+`Library/PackageCache`, where UPM puts git-installed packages, is an **immutable folder**. Unity
+does not generate `.meta` files there, and it *ignores any asset that lacks one*:
+
+> File has no meta file, but it's in an immutable folder. The asset will be ignored.
+
+A `.cs` file added to `Runtime/` without its `.meta` is silently excluded from the assembly. The
+`.asmdef` without its `.meta` means the assembly does not exist at all, and every reference to it
+reports as missing.
+
+So `.meta` files are committed here, `.gitignore` must never exclude them, and adding a file
+means adding its `.meta` in the same commit. The reliable way to produce one is to let Unity
+generate it: embed this folder under a project's `Packages/` — embedded packages are mutable —
+let Unity import, then copy the `.meta` back.
+
+### Referencing the assembly
+
+Add `Resonance.Contracts` to the `references` array of whichever assembly definition contains
+the code that uses these types:
 
 ```json
 { "name": "LobbySystem", "references": ["Resonance.Contracts"] }
 ```
 
-A GUID-form reference (`"GUID:8f3a..."`) resolves on the machine that created it and fails on a
-clean checkout.
+References are not transitive — every assembly with a `using Resonance.Contracts;` needs its own
+entry. Code in the predefined `Assembly-CSharp` needs none, because the asmdef sets
+`autoReferenced: true`.
 
 ### Install from the git URL, not a local `file:` path
 
@@ -33,9 +49,6 @@ tree that also contains `bin/` and `obj/` from `dotnet build`; UPM does not excl
 would import `bin/Debug/netstandard2.1/Resonance.Contracts.dll` as a managed plugin *and*
 compile `Runtime/*.cs` into an assembly of the same name. Run `dotnet clean` first if you need a
 local reference for development.
-
-This works because no type here derives from `MonoBehaviour` or `ScriptableObject`, so no scene
-or prefab can reference one. If that ever changes, `.meta` files have to start being committed.
 
 ### Match the serializer conventions
 

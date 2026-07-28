@@ -44,5 +44,6 @@ msbuild.wrn
 .vs/
 
 
-# Unity regenerates these per install; the package is referenced by assembly name, not GUID.
-Resonance.Contracts/**/*.meta
+# Do NOT ignore Resonance.Contracts/**/*.meta. Library/PackageCache is an immutable folder:
+# Unity does not generate meta files there, and ignores any asset that lacks one. Without the
+# committed metas the asmdef is never imported and the assembly does not exist.

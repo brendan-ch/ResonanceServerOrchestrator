@@ -141,8 +141,10 @@ Editing anything under `Resonance.Contracts/Runtime/` means editing the game's c
   explicitly because clients may send the numeric form. Append, never insert — commit `3dc6137`
   inserted `Dummy` ahead of `Steam` and silently renumbered it.
 - **Types are immutable.** Get-only properties; construct a new instance rather than mutating.
-- **`.meta` files are gitignored** and the assembly is referenced by name, not GUID. That holds
-  only while no type here derives from `MonoBehaviour` or `ScriptableObject`.
+- **Every file needs a committed `.meta`.** `Library/PackageCache` is an immutable folder: Unity
+  does not generate `.meta` files there and ignores any asset lacking one, so a `.cs` added
+  without its `.meta` is silently dropped from the assembly and an `.asmdef` without one means
+  the assembly does not exist. Add the `.meta` in the same commit as the file.
 
 The orchestrator keeps its own serializer configuration in `Serialization/`; the package stays
 serializer-agnostic so Unity can use Newtonsoft, which is all it ships.
