@@ -2,5 +2,5 @@ namespace ResonanceServerOrchestrator.Contracts;
 
 public sealed record LeaveMatchDto
 {
-    public required IPlatformUserInformationDto PlatformUserInformation { get; init; }
+    public required PlatformUserInformationDto PlatformUserInformation { get; init; }
 }

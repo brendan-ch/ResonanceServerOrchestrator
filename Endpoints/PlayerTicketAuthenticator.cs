@@ -15,8 +15,14 @@ internal sealed class PlayerTicketAuthenticator(
     private const string ClientFacingRejection = "The authentication ticket was rejected.";
 
     public async Task<string?> DescribeAuthenticationFailureAsync(
-        IPlatformUserInformationDto user, CancellationToken cancellationToken)
+        PlatformUserInformationDto user, CancellationToken cancellationToken)
     {
+        // The dummy platform asserts an identity without proving it, so it may only be used
+        // when credential checking is off entirely — never against a live Steam deployment.
+        if (user.Platform is Platform.Dummy && !options.Value.SteamCredentialCheckDisabled)
+            return Reject(user,
+                "The dummy platform is only accepted when the Steam credential check is disabled.");
+
         if (options.Value.SteamCredentialCheckDisabled)
             return null;
 
@@ -42,7 +48,7 @@ internal sealed class PlayerTicketAuthenticator(
         return null;
     }
 
-    private string Reject(IPlatformUserInformationDto user, string serverSideDetail)
+    private string Reject(PlatformUserInformationDto user, string serverSideDetail)
     {
         logger.LogWarning(
             "Rejected a join by {Platform} player {PlatformUserId}: {Detail}",

@@ -6,8 +6,16 @@ namespace ResonanceServerOrchestrator.Endpoints;
 internal static class PlatformUserValidator
 {
     public static string? DescribeFirstProblem(
-        IPlatformUserInformationDto user, OrchestratorOptions limits)
+        PlatformUserInformationDto? user, OrchestratorOptions limits)
     {
+        if (user is null)
+            return "platformUserInformation is required.";
+
+        // Nothing rejects an out-of-range ordinal before this point: JsonStringEnumConverter
+        // admits any integer, and Platform.Steam is the zero value a missing field binds to.
+        if (!Enum.IsDefined(user.Platform))
+            return "platformUserInformation.platform must name a supported platform.";
+
         if (string.IsNullOrWhiteSpace(user.PlatformUserId))
             return "platformUserInformation.platformUserId must not be empty.";
 

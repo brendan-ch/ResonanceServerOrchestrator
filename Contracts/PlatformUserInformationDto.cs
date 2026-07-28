@@ -1,11 +1,11 @@
 namespace ResonanceServerOrchestrator.Contracts;
 
-public sealed record ExpectedLobbyPlayerDto
+public sealed record PlatformUserInformationDto(
+    Platform Platform,
+    string PlatformUserId,
+    string PlatformLobbyId,
+    string? AuthenticationTicketHex = null)
 {
-    public required string Username { get; init; }
-    public required Platform Platform { get; init; }
-    public required string PlatformUserId { get; init; }
-
     /// <remarks>
     /// Deliberately a method rather than a property: a public getter would be serialized onto
     /// the wire as a redundant copy of the two fields it derives from.

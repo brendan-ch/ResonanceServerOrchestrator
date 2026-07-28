@@ -27,7 +27,7 @@ public static class MatchEndpoints
     }
 
     private static async Task<IResult> HandleJoinMatch(
-        JoinMatchDto request,
+        JoinMatchDto? request,
         IMatchStore store,
         PlayerTicketAuthenticator authenticator,
         MatchLaunchCoordinator launchCoordinator,
@@ -38,7 +38,7 @@ public static class MatchEndpoints
                 request, options.Value, out var joiningPlayer, out var problem))
             return Results.Problem(detail: problem, statusCode: StatusCodes.Status400BadRequest);
 
-        var user = request.PlatformUserInformation;
+        var user = request!.PlatformUserInformation;
         var lobby = new LobbyKey(user.Platform, user.PlatformLobbyId);
 
         var authenticationFailure =
@@ -46,16 +46,16 @@ public static class MatchEndpoints
 
         if (authenticationFailure is not null)
         {
-            store.TryTearDownForFailedAuth(lobby, user.Identity);
+            store.TryTearDownForFailedAuth(lobby, user.GetIdentity());
             return Results.Json(authenticationFailure,
                 statusCode: StatusCodes.Status401Unauthorized);
         }
 
         var outcome = store.TryJoin(
             lobby,
-            user.Identity,
+            user.GetIdentity(),
             joiningPlayer.Username,
-            request.ExpectedLobbyPlayers.Select(player => player.Identity).ToList());
+            request.ExpectedLobbyPlayers.Select(player => player.GetIdentity()).ToList());
 
         return outcome switch
         {
@@ -63,11 +63,11 @@ public static class MatchEndpoints
                 rejected.Reason, rejected.JoinedCount, rejected.ExpectedCount),
 
             RosterComplete rosterComplete => await LaunchThenAwaitCompletionAsync(
-                rosterComplete, store, launchCoordinator, user.Identity, cancellationToken),
+                rosterComplete, store, launchCoordinator, user.GetIdentity(), cancellationToken),
 
             MemberAdded memberAdded => await AwaitCompletionAsync(
                 memberAdded.MatchId, memberAdded.MemberGeneration, memberAdded.Completion,
-                store, user.Identity, cancellationToken),
+                store, user.GetIdentity(), cancellationToken),
 
             _ => Results.StatusCode(StatusCodes.Status500InternalServerError),
         };
@@ -102,13 +102,16 @@ public static class MatchEndpoints
     }
 
     private static async Task<IResult> HandleLeaveMatch(
-        LeaveMatchDto request,
+        LeaveMatchDto? request,
         IMatchStore store,
         PlayerTicketAuthenticator authenticator,
         IOptions<OrchestratorOptions> options,
         CancellationToken cancellationToken)
     {
-        var user = request.PlatformUserInformation;
+        if (request?.PlatformUserInformation is not { } user)
+            return Results.Problem(
+                detail: "platformUserInformation is required.",
+                statusCode: StatusCodes.Status400BadRequest);
 
         var problem = PlatformUserValidator.DescribeFirstProblem(user, options.Value);
         if (problem is not null)
@@ -121,6 +124,6 @@ public static class MatchEndpoints
             return Results.Json(authenticationFailure,
                 statusCode: StatusCodes.Status401Unauthorized);
 
-        return store.TryLeave(user.Identity) ? Results.NoContent() : Results.NotFound();
+        return store.TryLeave(user.GetIdentity()) ? Results.NoContent() : Results.NotFound();
     }
 }

@@ -57,6 +57,19 @@ public sealed class JoinMatchValidationTests : IDisposable
     [InlineData("""{"platformUserInformation":"steam","expectedLobbyPlayers":[]}""")]
     [InlineData("[]")]
     [InlineData("not json at all")]
+    // Payloads below were rejected during binding by the polymorphic converter and by
+    // `required`. Flattening moves that rejection into the validators, so the endpoint has to
+    // keep answering 400 rather than dereferencing a null.
+    [InlineData("null")]
+    [InlineData("{}")]
+    [InlineData("""{"platformUserInformation":{"platform":"Steam","platformUserId":"1","platformLobbyId":"l"}}""")]
+    [InlineData("""{"platformUserInformation":{"platform":"Steam","platformUserId":"1","platformLobbyId":"l"},"expectedLobbyPlayers":null}""")]
+    [InlineData("""{"platformUserInformation":{"platform":"Steam","platformLobbyId":"l"},"expectedLobbyPlayers":[]}""")]
+    [InlineData("""{"platformUserInformation":{"platform":"Steam","platformUserId":"1"},"expectedLobbyPlayers":[]}""")]
+    [InlineData("""{"platformUserInformation":{"platform":99,"platformUserId":"1","platformLobbyId":"l"},"expectedLobbyPlayers":[]}""")]
+    [InlineData("""{"platformUserInformation":{"platform":-1,"platformUserId":"1","platformLobbyId":"l"},"expectedLobbyPlayers":[]}""")]
+    [InlineData("""{"platformUserInformation":{"platform":"Steam","platformUserId":"1","platformLobbyId":"l"},"expectedLobbyPlayers":[{"username":"p","platform":99,"platformUserId":"1"}]}""")]
+    [InlineData("""{"platformUserInformation":{"platform":"Steam","platformUserId":"1","platformLobbyId":"l"},"expectedLobbyPlayers":[null]}""")]
     public async Task Join_UnbindableBody_ReturnsBadRequestNeverServerError(string json)
     {
         var response = await _client.PostRawJoinAsync(json);
