@@ -29,7 +29,8 @@ All routes are versioned via URL segment (`Asp.Versioning.Http`).
 | GET | `/v1/server/matches/{matchId}/members` | Game server | `X-Match-Key` header |
 
 The platform lobby id travels in the request body (`PlatformUserInformation.PlatformLobbyId`), not
-the path.
+the path. Every request and response type comes from `Resonance.Contracts`, which the Unity game
+consumes as a package — see "The shared contracts package" below before changing any of them.
 
 ### Client contract obligations
 
@@ -82,7 +83,7 @@ rather than failing per-request.
 | `RosterAssemblyTimeoutSeconds` | Budget for every expected player to join |
 | `ServerReadyTimeoutSeconds` | Budget for the launched server to call `/ready` |
 | `TombstoneRetentionMinutes` | How long a destroyed match id answers `410` instead of `404` |
-| `SteamCredentialCheckDisabled` | Disables ticket validation entirely |
+| `SteamCredentialCheckDisabled` | Disables ticket validation entirely, and is the only setting under which `Platform.Dummy` is accepted |
 | `SteamPublisherWebApiKey`, `SteamAppId` | Required unless the check is disabled |
 
 ### LauncherType
@@ -105,13 +106,43 @@ to 1 under `LocalProcess`, and a join that would create a second match is refuse
 ## Project Structure
 
 ```
-Configuration/   OrchestratorOptions + per-rule startup validation
-Contracts/       Wire types: join/leave DTOs, PlayerIdentity, failure reasons
-Serialization/   Custom converter for the polymorphic platform user information
-Endpoints/       MatchEndpoints (client) and ServerEndpoints (game server)
-Stores/          IMatchStore + InMemoryMatchStore: matches, members, waiters, tombstones
-Services/        Launcher abstraction, Steam ticket validation, match cleanup
+Resonance.Contracts/  Wire types shared with the Unity game — see below
+Configuration/        OrchestratorOptions + per-rule startup validation
+Serialization/        Orchestrator-side JSON conventions (JsonStringEnumConverter)
+Endpoints/            MatchEndpoints (client) and ServerEndpoints (game server)
+Stores/               IMatchStore + InMemoryMatchStore: matches, members, waiters, tombstones
+Services/             Launcher abstraction, Steam ticket validation, match cleanup
 ```
 
 State is entirely in-memory. An orchestrator restart drops in-flight joins and bricks running
 matches (their `/members` calls start returning `404`).
+
+## The shared contracts package
+
+`Resonance.Contracts/` is one folder serving two consumers: a `netstandard2.1` project this
+orchestrator references, and a Unity UPM package the game pulls over a git URL with `?path=`.
+Both compile the same source under `Runtime/`. See its `README.md` for the Unity side.
+
+Editing anything under `Resonance.Contracts/Runtime/` means editing the game's code too:
+
+- **Unity compiles it from source at C# 9.** No records, no `init`, no file-scoped namespaces,
+  no `required`, no implicit usings. `LangVersion 9.0` is pinned so violations fail
+  `dotnet build` here rather than in the game repo.
+- **No serializer attributes, no dependencies.** Each type has one public constructor whose
+  parameter names match its property names — that alone is what lets `System.Text.Json` here
+  and Newtonsoft in Unity both bind them. Renaming a constructor parameter without renaming its
+  property breaks deserialization with no compile error; `UnitySerializerCompatibilityTests`
+  exercises every type through both serializers because Newtonsoft fails this silently.
+- **Absent fields are rejected by `RespectRequiredConstructorParameters`**, set in
+  `Serialization/OrchestratorJsonOptions.cs`. The contracts cannot use `required` (C# 11), so
+  without it an omitted `platform` would bind to `Platform.Steam` — a real member — and succeed
+  under an assumed platform. Newtonsoft has no equivalent, so Unity is the lenient side.
+- **Enum ordinals are a wire contract.** `Platform` and `JoinFailureReason` pin every value
+  explicitly because clients may send the numeric form. Append, never insert — commit `3dc6137`
+  inserted `Dummy` ahead of `Steam` and silently renumbered it.
+- **Types are immutable.** Get-only properties; construct a new instance rather than mutating.
+- **`.meta` files are gitignored** and the assembly is referenced by name, not GUID. That holds
+  only while no type here derives from `MonoBehaviour` or `ScriptableObject`.
+
+The orchestrator keeps its own serializer configuration in `Serialization/`; the package stays
+serializer-agnostic so Unity can use Newtonsoft, which is all it ships.

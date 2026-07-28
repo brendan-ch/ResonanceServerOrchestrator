@@ -74,6 +74,32 @@ public sealed class PlatformUserInformationSerializationTests
         Assert.Null(Deserialize(json).AuthenticationTicketHex);
     }
 
+    /// <remarks>
+    /// The contracts cannot use `required` (Unity compiles them at C# 9), so an omitted property
+    /// binds to its parameter default. For Platform that default is a real member, Steam, which
+    /// would let a payload with no `platform` at all succeed under an assumed platform.
+    /// RespectRequiredConstructorParameters is what closes that.
+    /// </remarks>
+    [Theory]
+    [InlineData("""{"platformUserId":"765","platformLobbyId":"109"}""")]
+    [InlineData("""{"platform":0,"platformLobbyId":"109"}""")]
+    [InlineData("""{"platform":0,"platformUserId":"765"}""")]
+    [InlineData("{}")]
+    public void Read_PayloadOmittingARequiredProperty_ThrowsJsonException(string json)
+    {
+        Assert.Throws<JsonException>(() => Deserialize(json));
+    }
+
+    [Fact]
+    public void Read_PayloadOmittingOnlyTheOptionalTicket_Binds()
+    {
+        const string json = """
+            {"platform":0,"platformUserId":"765","platformLobbyId":"109"}
+            """;
+
+        Assert.Null(Deserialize(json).AuthenticationTicketHex);
+    }
+
     [Theory]
     [InlineData("""{"platform":"Xbox","platformUserId":"765","platformLobbyId":"109"}""")]
     [InlineData("""{"platform":null,"platformUserId":"765","platformLobbyId":"109"}""")]

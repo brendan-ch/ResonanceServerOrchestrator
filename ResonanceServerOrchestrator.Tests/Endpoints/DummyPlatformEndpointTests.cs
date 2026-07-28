@@ -91,6 +91,73 @@ public sealed class DummyPlatformEndpointTests
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
 
+    /// <remarks>
+    /// The joining player authenticates normally; only the roster carries a dummy. Nothing mints
+    /// a token for that entry, but it occupies a slot no one can ever fill, holding the single
+    /// configured match for the whole roster-assembly budget.
+    /// </remarks>
+    [Fact]
+    public async Task Join_WithADummyRosterEntry_WhileCredentialCheckingIsOn_ReturnsBadRequest()
+    {
+        const string steamPlayer = "76561198000000001";
+
+        using var factory = WithCredentialChecking();
+        factory.TicketValidatorSubstitute
+            .ValidateAsync(AcceptedTicket, Arg.Any<CancellationToken>())
+            .Returns(new SteamTicketValidationResult(true, steamPlayer, false, null));
+        using var client = factory.CreateClient();
+
+        var response = await client.PostJoinAsync(new
+        {
+            platformUserInformation = new
+            {
+                platform = "Steam",
+                platformUserId = steamPlayer,
+                platformLobbyId = LobbyId,
+                authenticationTicketHex = AcceptedTicket,
+            },
+            expectedLobbyPlayers = new object[]
+            {
+                new { username = "real", platform = "Steam", platformUserId = steamPlayer },
+                new { username = "ghost", platform = "Dummy", platformUserId = Player },
+            },
+        });
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Join_WithADummyRosterEntry_WhileCredentialCheckingIsOff_IsAccepted()
+    {
+        const string dummyPeer = "dummy-player-2";
+
+        using var factory = new OrchestratorWebApplicationFactory();
+        using var client = factory.CreateClient();
+
+        using var cancellation = new CancellationTokenSource(TestBudget);
+        var join = client.PostJoinAsync(new
+        {
+            platformUserInformation = new
+            {
+                platform = "Dummy",
+                platformUserId = Player,
+                platformLobbyId = LobbyId,
+                authenticationTicketHex = (string?)null,
+            },
+            expectedLobbyPlayers = new object[]
+            {
+                new { username = "dummy", platform = "Dummy", platformUserId = Player },
+                new { username = "peer", platform = "Dummy", platformUserId = dummyPeer },
+            },
+        }, cancellation.Token);
+
+        await factory.Store
+            .WhenMemberCountReaches(new LobbyKey(Platform.Dummy, LobbyId), 1)
+            .WaitAsync(TestBudget);
+
+        Assert.False(join.IsFaulted);
+    }
+
     [Fact]
     public async Task Join_AsDummy_WhileCredentialCheckingIsOff_IsAccepted()
     {

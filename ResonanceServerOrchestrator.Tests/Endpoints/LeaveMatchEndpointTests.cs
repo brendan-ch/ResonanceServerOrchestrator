@@ -90,12 +90,32 @@ public sealed class LeaveMatchEndpointTests : IDisposable
     [Fact]
     public async Task Leave_MissingPlatformUserId_ReturnsBadRequest()
     {
-        var response = await _client.PostAsync(
-            MatchRequests.LeavePath,
-            new StringContent(
-                """{"platformUserInformation":{"platform":"Steam","platformUserId":"","platformLobbyId":"l"}}""",
-                System.Text.Encoding.UTF8,
-                "application/json"));
+        var response = await _client.PostRawLeaveAsync(
+            """{"platformUserInformation":{"platform":"Steam","platformUserId":"","platformLobbyId":"l"}}""");
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    /// <remarks>
+    /// The join path has had this theory since the converter existed; leave never did, so the
+    /// null guard added when `required` stopped protecting it had no direct coverage.
+    /// </remarks>
+    [Theory]
+    [InlineData("null")]
+    [InlineData("{}")]
+    [InlineData("""{"platformUserInformation":null}""")]
+    [InlineData("""{"platformUserInformation":[]}""")]
+    [InlineData("""{"platformUserInformation":"steam"}""")]
+    [InlineData("""{"platformUserInformation":{"platformUserId":"1","platformLobbyId":"l"}}""")]
+    [InlineData("""{"platformUserInformation":{"platform":"Steam","platformLobbyId":"l"}}""")]
+    [InlineData("""{"platformUserInformation":{"platform":"Steam","platformUserId":"1"}}""")]
+    [InlineData("""{"platformUserInformation":{"platform":99,"platformUserId":"1","platformLobbyId":"l"}}""")]
+    [InlineData("""{"platformUserInformation":{"platform":"Xbox","platformUserId":"1","platformLobbyId":"l"}}""")]
+    [InlineData("[]")]
+    [InlineData("not json at all")]
+    public async Task Leave_UnbindableBody_ReturnsBadRequestNeverServerError(string json)
+    {
+        var response = await _client.PostRawLeaveAsync(json);
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }

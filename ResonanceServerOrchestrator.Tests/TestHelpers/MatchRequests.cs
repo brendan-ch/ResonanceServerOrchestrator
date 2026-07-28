@@ -66,4 +66,11 @@ internal static class MatchRequests
             JoinPath,
             new StringContent(json, System.Text.Encoding.UTF8, "application/json"),
             cancellationToken);
+
+    public static Task<HttpResponseMessage> PostRawLeaveAsync(
+        this HttpClient client, string json, CancellationToken cancellationToken = default) =>
+        client.PostAsync(
+            LeavePath,
+            new StringContent(json, System.Text.Encoding.UTF8, "application/json"),
+            cancellationToken);
 }

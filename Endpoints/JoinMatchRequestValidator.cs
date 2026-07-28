@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using ResonanceServerOrchestrator.Configuration;
 using Resonance.Contracts;
 
@@ -6,7 +7,7 @@ namespace ResonanceServerOrchestrator.Endpoints;
 internal static class JoinMatchRequestValidator
 {
     public static bool TryValidate(
-        JoinMatchDto? request,
+        [NotNullWhen(true)] JoinMatchDto? request,
         OrchestratorOptions limits,
         out ExpectedLobbyPlayerDto joiningPlayer,
         out string? problem)
@@ -52,6 +53,15 @@ internal static class JoinMatchRequestValidator
 
         if (roster.Any(player => !Enum.IsDefined(player.Platform)))
             return "every expectedLobbyPlayers entry requires a supported platform.";
+
+        // The joining player's own dummy identity is PlayerTicketAuthenticator's to reject, so
+        // that it answers 401 rather than 400. Peers never pass through the authenticator at
+        // all, and a roster slot no one can ever authenticate into would hold the match for the
+        // whole roster-assembly budget.
+        if (!limits.SteamCredentialCheckDisabled &&
+            roster.Any(player => player.Platform is Platform.Dummy &&
+                                 player.GetIdentity() != request.PlatformUserInformation.GetIdentity()))
+            return "expectedLobbyPlayers may only name dummy players while the Steam credential check is disabled.";
 
         if (roster.Any(player => string.IsNullOrWhiteSpace(player.PlatformUserId)))
             return "every expectedLobbyPlayers entry requires a platformUserId.";

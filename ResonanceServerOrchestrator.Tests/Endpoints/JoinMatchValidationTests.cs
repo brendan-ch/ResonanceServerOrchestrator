@@ -52,6 +52,11 @@ public sealed class JoinMatchValidationTests : IDisposable
     [InlineData("""{"platformUserInformation":null,"expectedLobbyPlayers":[]}""")]
     [InlineData("""{"expectedLobbyPlayers":[]}""")]
     [InlineData("""{"platformUserInformation":{"platformUserId":"1","platformLobbyId":"l"},"expectedLobbyPlayers":[]}""")]
+    // Same payload with a well-formed roster, so the 400 can only come from the missing
+    // `platform` rather than from the empty-roster rule.
+    [InlineData("""{"platformUserInformation":{"platformUserId":"1","platformLobbyId":"l"},"expectedLobbyPlayers":[{"username":"p","platform":"Steam","platformUserId":"1"}]}""")]
+    [InlineData("""{"platformUserInformation":{"platform":"Steam","platformUserId":"1","platformLobbyId":"l"},"expectedLobbyPlayers":[{"username":"p","platformUserId":"1"}]}""")]
+    [InlineData("""{"platformUserInformation":{"platform":"Steam","platformUserId":"1","platformLobbyId":"l"},"expectedLobbyPlayers":[{"platform":"Steam","platformUserId":"1"}]}""")]
     [InlineData("""{"platformUserInformation":{"platform":"Xbox","platformUserId":"1","platformLobbyId":"l"},"expectedLobbyPlayers":[]}""")]
     [InlineData("""{"platformUserInformation":[],"expectedLobbyPlayers":[]}""")]
     [InlineData("""{"platformUserInformation":"steam","expectedLobbyPlayers":[]}""")]

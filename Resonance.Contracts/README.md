@@ -26,6 +26,14 @@ must therefore have **"Use GUIDs" unchecked** in its Inspector:
 A GUID-form reference (`"GUID:8f3a..."`) resolves on the machine that created it and fails on a
 clean checkout.
 
+### Install from the git URL, not a local `file:` path
+
+The git URL install is the supported path. A local `file:` reference points Unity at a working
+tree that also contains `bin/` and `obj/` from `dotnet build`; UPM does not exclude those, so it
+would import `bin/Debug/netstandard2.1/Resonance.Contracts.dll` as a managed plugin *and*
+compile `Runtime/*.cs` into an assembly of the same name. Run `dotnet clean` first if you need a
+local reference for development.
+
 This works because no type here derives from `MonoBehaviour` or `ScriptableObject`, so no scene
 or prefab can reference one. If that ever changes, `.meta` files have to start being committed.
 
@@ -51,6 +59,20 @@ settings.Converters.Add(new StringEnumConverter());
 No type here carries a serializer attribute, and the package has no dependencies. Each type has
 exactly one public constructor whose parameter names match its property names, which is what
 lets both serializers bind them with no configuration beyond the above.
+
+**That naming contract has no compile-time check.** Rename a constructor parameter without
+renaming its property and `System.Text.Json` throws, but Newtonsoft binds `null` and carries on
+silently. `ResonanceServerOrchestrator.Tests/Serialization/UnitySerializerCompatibilityTests.cs`
+exercises every type through both serializers for exactly this reason — it is the only thing
+standing between such a rename and a null field in the game.
+
+### The two serializers are not equally strict
+
+The orchestrator sets `RespectRequiredConstructorParameters`, so a payload omitting any
+constructor parameter without a default value is rejected. Newtonsoft has no equivalent in the
+settings above: it binds the parameter's default instead. For `Platform` that default is a real
+member — `Steam` — so a request the orchestrator rejects will deserialize on the Unity side as a
+Steam identity. Send every field explicitly; only `authenticationTicketHex` is optional.
 
 ## Language ceiling
 

@@ -38,7 +38,7 @@ public static class MatchEndpoints
                 request, options.Value, out var joiningPlayer, out var problem))
             return Results.Problem(detail: problem, statusCode: StatusCodes.Status400BadRequest);
 
-        var user = request!.PlatformUserInformation;
+        var user = request.PlatformUserInformation;
         var lobby = new LobbyKey(user.Platform, user.PlatformLobbyId);
 
         var authenticationFailure =
