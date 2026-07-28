@@ -1,4 +1,4 @@
-using ResonanceServerOrchestrator.Contracts;
+using Resonance.Contracts;
 using Xunit;
 
 namespace ResonanceServerOrchestrator.Tests.Contracts;

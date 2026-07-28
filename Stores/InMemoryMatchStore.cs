@@ -5,7 +5,7 @@ using System.Security.Cryptography;
 using System.Text;
 using Microsoft.Extensions.Options;
 using ResonanceServerOrchestrator.Configuration;
-using ResonanceServerOrchestrator.Contracts;
+using Resonance.Contracts;
 using ResonanceServerOrchestrator.Services;
 
 namespace ResonanceServerOrchestrator.Stores;

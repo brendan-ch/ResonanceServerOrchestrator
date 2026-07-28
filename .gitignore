@@ -43,3 +43,6 @@ msbuild.wrn
 # Visual Studio 2015
 .vs/
 
+
+# Unity regenerates these per install; the package is referenced by assembly name, not GUID.
+Resonance.Contracts/**/*.meta

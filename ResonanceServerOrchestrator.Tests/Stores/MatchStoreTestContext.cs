@@ -1,6 +1,6 @@
 using Microsoft.Extensions.Time.Testing;
 using ResonanceServerOrchestrator.Configuration;
-using ResonanceServerOrchestrator.Contracts;
+using Resonance.Contracts;
 using ResonanceServerOrchestrator.Stores;
 using Xunit;
 

@@ -1,7 +1,7 @@
 using System.Net;
 using System.Net.Http.Json;
 using NSubstitute;
-using ResonanceServerOrchestrator.Contracts;
+using Resonance.Contracts;
 using ResonanceServerOrchestrator.Endpoints;
 using ResonanceServerOrchestrator.Services;
 using ResonanceServerOrchestrator.Stores;

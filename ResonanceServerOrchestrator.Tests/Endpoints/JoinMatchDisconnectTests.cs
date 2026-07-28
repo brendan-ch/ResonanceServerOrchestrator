@@ -1,4 +1,4 @@
-using ResonanceServerOrchestrator.Contracts;
+using Resonance.Contracts;
 using ResonanceServerOrchestrator.Stores;
 using ResonanceServerOrchestrator.Tests.TestHelpers;
 using Xunit;

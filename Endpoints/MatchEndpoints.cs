@@ -2,7 +2,7 @@ using Asp.Versioning;
 using Asp.Versioning.Builder;
 using Microsoft.Extensions.Options;
 using ResonanceServerOrchestrator.Configuration;
-using ResonanceServerOrchestrator.Contracts;
+using Resonance.Contracts;
 using ResonanceServerOrchestrator.Services;
 using ResonanceServerOrchestrator.Stores;
 

@@ -1,5 +1,5 @@
 using System.Text.Json;
-using ResonanceServerOrchestrator.Contracts;
+using Resonance.Contracts;
 using ResonanceServerOrchestrator.Serialization;
 using Xunit;
 
@@ -99,7 +99,14 @@ public sealed class PlatformUserInformationSerializationTests
 
         var written = JsonSerializer.Serialize(original, SerializerOptions);
 
-        Assert.Equal(original, Deserialize(written));
+        // Compared field by field rather than with Assert.Equal: the contracts are plain
+        // classes, so equality is by reference.
+        var read = Deserialize(written);
+
+        Assert.Equal(original.Platform, read.Platform);
+        Assert.Equal(original.PlatformUserId, read.PlatformUserId);
+        Assert.Equal(original.PlatformLobbyId, read.PlatformLobbyId);
+        Assert.Equal(original.AuthenticationTicketHex, read.AuthenticationTicketHex);
     }
 
     [Fact]
@@ -122,18 +129,9 @@ public sealed class PlatformUserInformationSerializationTests
     [Fact]
     public void Write_DoesNotEmitTheDerivedIdentity()
     {
-        var request = new JoinMatchDto
-        {
-            PlatformUserInformation =
-                new PlatformUserInformationDto(Platform.Steam, "765", "109"),
-            ExpectedLobbyPlayers =
-            [
-                new ExpectedLobbyPlayerDto
-                {
-                    Username = "ana", Platform = Platform.Steam, PlatformUserId = "765",
-                },
-            ],
-        };
+        var request = new JoinMatchDto(
+            new PlatformUserInformationDto(Platform.Steam, "765", "109"),
+            [new ExpectedLobbyPlayerDto("ana", Platform.Steam, "765")]);
 
         var written = JsonSerializer.Serialize(request, SerializerOptions);
 

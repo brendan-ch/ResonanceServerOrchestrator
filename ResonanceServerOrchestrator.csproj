@@ -14,6 +14,21 @@
     <None Remove="ResonanceServerOrchestrator.Tests/**" />
   </ItemGroup>
 
+  <!--
+    Resonance.Contracts is its own project. Without these removes the root SDK glob would
+    compile its source a second time and every type would collide.
+  -->
+  <ItemGroup>
+    <Compile Remove="Resonance.Contracts/**" />
+    <Content Remove="Resonance.Contracts/**" />
+    <EmbeddedResource Remove="Resonance.Contracts/**" />
+    <None Remove="Resonance.Contracts/**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="Resonance.Contracts/Resonance.Contracts.csproj" />
+  </ItemGroup>
+
   <ItemGroup>
     <PackageReference Include="Asp.Versioning.Http" Version="8.1.1" />
   </ItemGroup>

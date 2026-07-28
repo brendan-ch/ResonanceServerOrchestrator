@@ -1,6 +1,6 @@
 using System.Net;
 using System.Net.Http.Json;
-using ResonanceServerOrchestrator.Contracts;
+using Resonance.Contracts;
 using ResonanceServerOrchestrator.Stores;
 using ResonanceServerOrchestrator.Tests.TestHelpers;
 using Xunit;

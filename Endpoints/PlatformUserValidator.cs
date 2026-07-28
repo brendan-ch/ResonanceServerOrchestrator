@@ -1,5 +1,5 @@
 using ResonanceServerOrchestrator.Configuration;
-using ResonanceServerOrchestrator.Contracts;
+using Resonance.Contracts;
 
 namespace ResonanceServerOrchestrator.Endpoints;
 

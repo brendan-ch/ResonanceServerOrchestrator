@@ -1,4 +1,4 @@
-using ResonanceServerOrchestrator.Contracts;
+using Resonance.Contracts;
 using ResonanceServerOrchestrator.Services;
 
 namespace ResonanceServerOrchestrator.Stores;

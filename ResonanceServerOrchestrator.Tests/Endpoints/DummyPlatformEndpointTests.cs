@@ -1,7 +1,7 @@
 using System.Net;
 using NSubstitute;
 using ResonanceServerOrchestrator.Configuration;
-using ResonanceServerOrchestrator.Contracts;
+using Resonance.Contracts;
 using ResonanceServerOrchestrator.Services;
 using ResonanceServerOrchestrator.Stores;
 using ResonanceServerOrchestrator.Tests.TestHelpers;
