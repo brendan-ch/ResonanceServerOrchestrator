@@ -9,7 +9,8 @@ internal interface IMatchStore
         LobbyKey lobby,
         PlayerIdentity identity,
         string username,
-        IReadOnlyList<PlayerIdentity> expectedRoster);
+        IReadOnlyList<PlayerIdentity> expectedRoster,
+        string expectedNextSceneName);
 
     bool TrySetInstance(Guid matchId, IGameInstance instance);
 

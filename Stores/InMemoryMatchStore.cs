@@ -32,7 +32,9 @@ internal sealed class InMemoryMatchStore(IOptions<OrchestratorOptions> options, 
         LobbyKey lobby,
         PlayerIdentity identity,
         string username,
-        IReadOnlyList<PlayerIdentity> expectedRoster)
+        IReadOnlyList<PlayerIdentity> expectedRoster,
+        string expectedNextSceneName
+    )
     {
         lock (_mutationLock)
         {
@@ -41,8 +43,8 @@ internal sealed class InMemoryMatchStore(IOptions<OrchestratorOptions> options, 
                 return multiLobbyRejection;
 
             return TryFindMatchInLobby(lobby) is { } existingMatch
-                ? JoinExistingMatch(existingMatch, identity, username, expectedRoster)
-                : CreateMatch(lobby, identity, username, expectedRoster);
+                ? JoinExistingMatch(existingMatch, identity, username, expectedRoster, expectedNextSceneName)
+                : CreateMatch(lobby, identity, username, expectedRoster, expectedNextSceneName);
         }
     }
 
@@ -246,11 +248,10 @@ internal sealed class InMemoryMatchStore(IOptions<OrchestratorOptions> options, 
         return new Rejected(JoinFailureReason.PlayerInMultipleLobbies, 0, expectedRosterSize);
     }
 
-    private JoinOutcome JoinExistingMatch(
-        MatchState match,
+    private JoinOutcome JoinExistingMatch(MatchState match,
         PlayerIdentity identity,
         string username,
-        IReadOnlyList<PlayerIdentity> expectedRoster)
+        IReadOnlyList<PlayerIdentity> expectedRoster, string expectedNextSceneName)
     {
         if (match.Status is MatchStatus.Started)
             return new Rejected(
@@ -261,6 +262,13 @@ internal sealed class InMemoryMatchStore(IOptions<OrchestratorOptions> options, 
             var rejection = new Rejected(
                 JoinFailureReason.RosterMismatch, match.JoinedCount, match.ExpectedCount);
             DestroyWithFailure(match, JoinFailureReason.RosterMismatch);
+            return rejection;
+        }
+
+        if (match.NextSceneName != expectedNextSceneName)
+        {
+            var rejection = new Rejected(JoinFailureReason.OtherDataMismatch, match.JoinedCount, match.ExpectedCount);
+            DestroyWithFailure(match, JoinFailureReason.OtherDataMismatch);
             return rejection;
         }
 
@@ -296,7 +304,9 @@ internal sealed class InMemoryMatchStore(IOptions<OrchestratorOptions> options, 
         LobbyKey lobby,
         PlayerIdentity identity,
         string username,
-        IReadOnlyList<PlayerIdentity> expectedRoster)
+        IReadOnlyList<PlayerIdentity> expectedRoster,
+        string expectedNextSceneName
+    )
     {
         if (_matchesById.Count >= Options.MaxMatches)
             return new Rejected(JoinFailureReason.CapacityReached, 0, 0);
@@ -311,7 +321,8 @@ internal sealed class InMemoryMatchStore(IOptions<OrchestratorOptions> options, 
             MatchKey = MintSecret(),
             CanonicalRoster = expectedRoster.ToImmutableArray(),
             CreatedAt = timeProvider.GetUtcNow(),
-            Members = ImmutableDictionary<PlayerIdentity, MatchMember>.Empty.Add(identity, firstMember)
+            Members = ImmutableDictionary<PlayerIdentity, MatchMember>.Empty.Add(identity, firstMember),
+            NextSceneName = expectedNextSceneName
         };
 
         _deadlineTimersByMatchId[matchId] = new MatchDeadlineTimers();

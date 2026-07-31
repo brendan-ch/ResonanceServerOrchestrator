@@ -12,5 +12,6 @@ namespace Resonance.Contracts
         SupersededByReconnect = 7,
         MatchAlreadyStarted = 8,
         CapacityReached = 9,
+        OtherDataMismatch = 10
     }
 }
