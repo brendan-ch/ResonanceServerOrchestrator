@@ -21,6 +21,8 @@ namespace ResonanceServerOrchestrator.Tests.Serialization;
 /// </remarks>
 public sealed class UnitySerializerCompatibilityTests
 {
+    private const string SampleNextSceneName = "TestScene";
+
     private static readonly JsonSerializerOptions OrchestratorOptions =
         new JsonSerializerOptions(JsonSerializerDefaults.Web).ApplyOrchestratorConventions();
 
@@ -100,10 +102,10 @@ public sealed class UnitySerializerCompatibilityTests
             [
                 new ExpectedLobbyPlayerDto("ana", Platform.Steam, "76561198000000001"),
                 new ExpectedLobbyPlayerDto("bo", Platform.Steam, "76561198000000002"),
-            ]));
+            ], SampleNextSceneName));
 
         var read = JsonSerializer.Deserialize<JoinMatchDto>(written, OrchestratorOptions)
-            ?? throw new InvalidOperationException("The join request bound to null.");
+                   ?? throw new InvalidOperationException("The join request bound to null.");
 
         Assert.Equal(Platform.Steam, read.PlatformUserInformation.Platform);
         Assert.Equal("76561198000000001", read.PlatformUserInformation.PlatformUserId);
@@ -119,7 +121,7 @@ public sealed class UnitySerializerCompatibilityTests
             new PlatformUserInformationDto(Platform.Dummy, "dummy-1", "lobby-1")));
 
         var read = JsonSerializer.Deserialize<LeaveMatchDto>(written, OrchestratorOptions)
-            ?? throw new InvalidOperationException("The leave request bound to null.");
+                   ?? throw new InvalidOperationException("The leave request bound to null.");
 
         Assert.Equal(
             new PlayerIdentity(Platform.Dummy, "dummy-1"),
@@ -136,10 +138,11 @@ public sealed class UnitySerializerCompatibilityTests
         var request = new JoinMatchDto(
             new PlatformUserInformationDto(
                 Platform.Dummy, "76561198000000001", "lobby-1", "14000000AABB"),
-            [new ExpectedLobbyPlayerDto("ana", Platform.Steam, "76561198000000001")]);
+            [new ExpectedLobbyPlayerDto("ana", Platform.Steam, "76561198000000001")], SampleNextSceneName);
 
         Assert.Equal(OrchestratorWrites(request), UnityWrites(request));
     }
+
 
     [Fact]
     public void UnityWritesEnumsAsNames_NotOrdinals()
@@ -160,8 +163,8 @@ public sealed class UnitySerializerCompatibilityTests
     {
         const string json = """{"platformUserId":"1","platformLobbyId":"lobby-1"}""";
 
-        Assert.Throws<System.Text.Json.JsonException>(
-            () => JsonSerializer.Deserialize<PlatformUserInformationDto>(json, OrchestratorOptions));
+        Assert.Throws<System.Text.Json.JsonException>(() =>
+            JsonSerializer.Deserialize<PlatformUserInformationDto>(json, OrchestratorOptions));
 
         Assert.Equal(Platform.Steam, UnityReads<PlatformUserInformationDto>(json).Platform);
     }

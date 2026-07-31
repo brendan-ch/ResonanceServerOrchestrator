@@ -7,6 +7,8 @@ namespace ResonanceServerOrchestrator.Tests.Stores;
 
 public sealed class InMemoryMatchStoreCapacityTests
 {
+    private const string SampleNextSceneName = "TestScene";
+
     private static readonly OrchestratorOptions SingleMatchCapacity = new()
     {
         MaxMatches = 1,
@@ -21,7 +23,8 @@ public sealed class InMemoryMatchStoreCapacityTests
         var roster = MatchStoreTestContext.Roster("alice", "bob", "carol", "dave", "erin");
 
         var outcomes = new[] { "alice", "bob", "carol", "dave", "erin" }
-            .Select(platformUserId => context.Join(MatchStoreTestContext.FirstLobby, platformUserId, roster))
+            .Select(platformUserId =>
+                context.Join(MatchStoreTestContext.FirstLobby, platformUserId, roster, SampleNextSceneName))
             .ToArray();
 
         Assert.DoesNotContain(outcomes, outcome => outcome is Rejected);
@@ -29,14 +32,17 @@ public sealed class InMemoryMatchStoreCapacityTests
         Assert.Single(outcomes.OfType<RosterComplete>());
     }
 
+
     [Fact]
     public void ASecondLobbyIsRejectedWithCapacityReachedOnceTheStoreIsFull()
     {
         var context = new MatchStoreTestContext(SingleMatchCapacity);
-        context.Join(MatchStoreTestContext.FirstLobby, "alice", MatchStoreTestContext.Roster("alice", "bob"));
+        context.Join(MatchStoreTestContext.FirstLobby, "alice", MatchStoreTestContext.Roster("alice", "bob"),
+            SampleNextSceneName);
 
         var secondLobbyAttempt = context.Join(
-            MatchStoreTestContext.SecondLobby, "carol", MatchStoreTestContext.Roster("carol", "dave"));
+            MatchStoreTestContext.SecondLobby, "carol", MatchStoreTestContext.Roster("carol", "dave"),
+            SampleNextSceneName);
 
         var rejected = Assert.IsType<Rejected>(secondLobbyAttempt);
         Assert.Equal(JoinFailureReason.CapacityReached, rejected.Reason);
@@ -48,11 +54,13 @@ public sealed class InMemoryMatchStoreCapacityTests
     public void CapacityFreedByADestroyedMatchIsImmediatelyReusable()
     {
         var context = new MatchStoreTestContext(SingleMatchCapacity);
-        context.Join(MatchStoreTestContext.FirstLobby, "alice", MatchStoreTestContext.Roster("alice", "bob"));
+        context.Join(MatchStoreTestContext.FirstLobby, "alice", MatchStoreTestContext.Roster("alice", "bob"),
+            SampleNextSceneName);
         context.Store.TryLeave(MatchStoreTestContext.Player("alice"));
 
         var secondLobbyAttempt = context.Join(
-            MatchStoreTestContext.SecondLobby, "carol", MatchStoreTestContext.Roster("carol", "dave"));
+            MatchStoreTestContext.SecondLobby, "carol", MatchStoreTestContext.Roster("carol", "dave"),
+            SampleNextSceneName);
 
         Assert.IsType<MemberAdded>(secondLobbyAttempt);
     }
@@ -67,7 +75,7 @@ public sealed class InMemoryMatchStoreCapacityTests
 
         RunSimultaneously(2, index => outcomes[index] = context.Join(
             lobbies[index], platformUserIds[index],
-            MatchStoreTestContext.Roster(platformUserIds[index], "peer")));
+            MatchStoreTestContext.Roster(platformUserIds[index], "peer"), SampleNextSceneName));
 
         Assert.Equal(1, context.Store.LiveMatchCount);
         var rejected = Assert.Single(outcomes.OfType<Rejected>());
@@ -83,7 +91,7 @@ public sealed class InMemoryMatchStoreCapacityTests
         var outcomes = new JoinOutcome[platformUserIds.Length];
 
         RunSimultaneously(platformUserIds.Length, index => outcomes[index] = context.Join(
-            MatchStoreTestContext.FirstLobby, platformUserIds[index], roster));
+            MatchStoreTestContext.FirstLobby, platformUserIds[index], roster, SampleNextSceneName));
 
         Assert.DoesNotContain(outcomes, outcome => outcome is Rejected);
         Assert.Single(outcomes.OfType<RosterComplete>());

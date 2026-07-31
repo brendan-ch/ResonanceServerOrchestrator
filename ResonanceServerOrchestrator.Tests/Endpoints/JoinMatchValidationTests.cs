@@ -94,7 +94,8 @@ public sealed class JoinMatchValidationTests : IDisposable
           },
           "expectedLobbyPlayers": [
             { "username": "p", "platformUserId": "{{Player}}", "platform": "Steam" }
-          ]
+          ],
+          "nextSceneName": "TestScene"
         }
         """;
 

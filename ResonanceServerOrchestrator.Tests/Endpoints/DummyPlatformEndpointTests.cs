@@ -28,6 +28,8 @@ public sealed class DummyPlatformEndpointTests
     /// </remarks>
     private const string AcceptedTicket = "accepted-ticket";
 
+    private const string SampleNextSceneName = "TestScene";
+
     private static object DummyJoinBody(string lobbyId = LobbyId) => new
     {
         platformUserInformation = new
@@ -41,6 +43,7 @@ public sealed class DummyPlatformEndpointTests
         {
             new { username = "dummy", platform = "Dummy", platformUserId = Player },
         },
+        nextSceneName = SampleNextSceneName
     };
 
     private static object DummyLeaveBody() => new
@@ -149,6 +152,7 @@ public sealed class DummyPlatformEndpointTests
                 new { username = "dummy", platform = "Dummy", platformUserId = Player },
                 new { username = "peer", platform = "Dummy", platformUserId = dummyPeer },
             },
+            nextSceneName = SampleNextSceneName
         }, cancellation.Token);
 
         await factory.Store

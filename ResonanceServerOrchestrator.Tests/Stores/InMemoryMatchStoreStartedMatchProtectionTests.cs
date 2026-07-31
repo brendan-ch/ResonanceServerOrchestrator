@@ -9,11 +9,12 @@ namespace ResonanceServerOrchestrator.Tests.Stores;
 public sealed class InMemoryMatchStoreStartedMatchProtectionTests
 {
     private static readonly LobbyKey Lobby = MatchStoreTestContext.FirstLobby;
+    private const string SampleNextSceneName = "TestScene";
 
     private static MatchStoreTestContext StartedMatchWithInstance(out IGameInstance instance)
     {
         var context = new MatchStoreTestContext();
-        var assembled = context.AssembleRoster(Lobby, "alice", "bob");
+        var assembled = context.AssembleRoster(Lobby, "TestScene", "alice", "bob");
 
         instance = Substitute.For<IGameInstance>();
         instance.HasExited.Returns(false);
@@ -31,7 +32,7 @@ public sealed class InMemoryMatchStoreStartedMatchProtectionTests
     {
         var context = StartedMatchWithInstance(out var instance);
 
-        var outcome = context.Join(Lobby, "attacker", MatchStoreTestContext.Roster("attacker"));
+        var outcome = context.Join(Lobby, "attacker", MatchStoreTestContext.Roster("attacker"), SampleNextSceneName);
 
         var rejected = Assert.IsType<Rejected>(outcome);
         Assert.Equal(JoinFailureReason.MatchAlreadyStarted, rejected.Reason);
@@ -47,7 +48,7 @@ public sealed class InMemoryMatchStoreStartedMatchProtectionTests
         var match = Assert.Single(
             new[] { context.Store.FindMatchInLobby(Lobby) }.OfType<MatchState>());
 
-        context.Join(Lobby, "attacker", MatchStoreTestContext.Roster("attacker", "accomplice"));
+        context.Join(Lobby, "attacker", MatchStoreTestContext.Roster("attacker", "accomplice"), SampleNextSceneName);
 
         var lookup = context.Store.LookUpSnapshotForGameServer(match.MatchId, match.MatchKey);
 
@@ -59,9 +60,9 @@ public sealed class InMemoryMatchStoreStartedMatchProtectionTests
     public void AMismatchedRosterStillDiscardsAMatchThatHasNotStarted()
     {
         var context = new MatchStoreTestContext();
-        context.Join(Lobby, "alice", MatchStoreTestContext.Roster("alice", "bob"));
+        context.Join(Lobby, "alice", MatchStoreTestContext.Roster("alice", "bob"), SampleNextSceneName);
 
-        var outcome = context.Join(Lobby, "bob", MatchStoreTestContext.Roster("bob", "carol"));
+        var outcome = context.Join(Lobby, "bob", MatchStoreTestContext.Roster("bob", "carol"), SampleNextSceneName);
 
         Assert.Equal(JoinFailureReason.RosterMismatch, Assert.IsType<Rejected>(outcome).Reason);
         Assert.Equal(0, context.Store.LiveMatchCount);

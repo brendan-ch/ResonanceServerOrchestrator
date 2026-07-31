@@ -7,6 +7,8 @@ namespace ResonanceServerOrchestrator.Tests.Serialization;
 
 public sealed class PlatformUserInformationSerializationTests
 {
+    private const string SampleNextSceneName = "TestScene";
+
     private static readonly JsonSerializerOptions SerializerOptions =
         new JsonSerializerOptions(JsonSerializerDefaults.Web).ApplyOrchestratorConventions();
 
@@ -30,12 +32,12 @@ public sealed class PlatformUserInformationSerializationTests
     public void Read_PlatformInEitherWireForm_Binds(string platformJson, Platform expected)
     {
         var json = $$"""
-            {
-              "platform": {{platformJson}},
-              "platformUserId": "76561197960287930",
-              "platformLobbyId": "109775241004308694"
-            }
-            """;
+                     {
+                       "platform": {{platformJson}},
+                       "platformUserId": "76561197960287930",
+                       "platformLobbyId": "109775241004308694"
+                     }
+                     """;
 
         Assert.Equal(expected, Deserialize(json).Platform);
     }
@@ -44,13 +46,13 @@ public sealed class PlatformUserInformationSerializationTests
     public void Read_PlatformDiscriminatorLast_StillBinds()
     {
         const string json = """
-            {
-              "platformUserId": "76561197960287930",
-              "platformLobbyId": "109775241004308694",
-              "authenticationTicketHex": "14000000",
-              "platform": 0
-            }
-            """;
+                            {
+                              "platformUserId": "76561197960287930",
+                              "platformLobbyId": "109775241004308694",
+                              "authenticationTicketHex": "14000000",
+                              "platform": 0
+                            }
+                            """;
 
         var user = Deserialize(json);
 
@@ -64,12 +66,12 @@ public sealed class PlatformUserInformationSerializationTests
     public void Read_AuthenticationTicketOmitted_BindsWithoutATicket()
     {
         const string json = """
-            {
-              "platform": 0,
-              "platformUserId": "76561197960287930",
-              "platformLobbyId": "109775241004308694"
-            }
-            """;
+                            {
+                              "platform": 0,
+                              "platformUserId": "76561197960287930",
+                              "platformLobbyId": "109775241004308694"
+                            }
+                            """;
 
         Assert.Null(Deserialize(json).AuthenticationTicketHex);
     }
@@ -94,8 +96,8 @@ public sealed class PlatformUserInformationSerializationTests
     public void Read_PayloadOmittingOnlyTheOptionalTicket_Binds()
     {
         const string json = """
-            {"platform":0,"platformUserId":"765","platformLobbyId":"109"}
-            """;
+                            {"platform":0,"platformUserId":"765","platformLobbyId":"109"}
+                            """;
 
         Assert.Null(Deserialize(json).AuthenticationTicketHex);
     }
@@ -157,12 +159,13 @@ public sealed class PlatformUserInformationSerializationTests
     {
         var request = new JoinMatchDto(
             new PlatformUserInformationDto(Platform.Steam, "765", "109"),
-            [new ExpectedLobbyPlayerDto("ana", Platform.Steam, "765")]);
+            [new ExpectedLobbyPlayerDto("ana", Platform.Steam, "765")], SampleNextSceneName);
 
         var written = JsonSerializer.Serialize(request, SerializerOptions);
 
         Assert.DoesNotContain("identity", written, StringComparison.OrdinalIgnoreCase);
     }
+
 
     [Fact]
     public void GetIdentity_PairsThePlatformWithTheUserId()
@@ -176,20 +179,21 @@ public sealed class PlatformUserInformationSerializationTests
     public void Read_WellFormedJoinRequest_BindsThePlatformUserInformation()
     {
         const string json = """
-            {
-              "platformUserInformation": {
-                "platformUserId": "76561197960287930",
-                "platformLobbyId": "109775241004308694",
-                "platform": 0
-              },
-              "expectedLobbyPlayers": [
-                { "username": "ana", "platform": 0, "platformUserId": "76561197960287930" }
-              ]
-            }
-            """;
+                            {
+                              "platformUserInformation": {
+                                "platformUserId": "76561197960287930",
+                                "platformLobbyId": "109775241004308694",
+                                "platform": 0
+                              },
+                              "expectedLobbyPlayers": [
+                                { "username": "ana", "platform": 0, "platformUserId": "76561197960287930" }
+                              ],
+                              "nextSceneName": "TestScene"
+                            }
+                            """;
 
         var request = JsonSerializer.Deserialize<JoinMatchDto>(json, SerializerOptions)
-            ?? throw new InvalidOperationException("The join request bound to null.");
+                      ?? throw new InvalidOperationException("The join request bound to null.");
 
         Assert.Equal(
             new PlayerIdentity(Platform.Steam, "76561197960287930"),

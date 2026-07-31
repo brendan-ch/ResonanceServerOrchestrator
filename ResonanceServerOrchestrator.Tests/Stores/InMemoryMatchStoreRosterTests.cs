@@ -6,14 +6,16 @@ namespace ResonanceServerOrchestrator.Tests.Stores;
 
 public sealed class InMemoryMatchStoreRosterTests
 {
+    private const string SampleNextSceneName = "TestScene";
+
     [Fact]
     public void RosterComparisonIgnoresTheOrderOfTheExpectedPlayers()
     {
         var context = new MatchStoreTestContext();
 
-        context.Join(MatchStoreTestContext.FirstLobby, "alice", MatchStoreTestContext.Roster("alice", "bob"));
+        context.Join(MatchStoreTestContext.FirstLobby, "alice", MatchStoreTestContext.Roster("alice", "bob"), SampleNextSceneName);
         var bob = context.Join(
-            MatchStoreTestContext.FirstLobby, "bob", MatchStoreTestContext.Roster("bob", "alice"));
+            MatchStoreTestContext.FirstLobby, "bob", MatchStoreTestContext.Roster("bob", "alice"), SampleNextSceneName);
 
         Assert.IsType<RosterComplete>(bob);
     }
@@ -23,10 +25,10 @@ public sealed class InMemoryMatchStoreRosterTests
     {
         var context = new MatchStoreTestContext();
         var alice = context.Join(
-            MatchStoreTestContext.FirstLobby, "alice", MatchStoreTestContext.Roster("alice", "bob"));
+            MatchStoreTestContext.FirstLobby, "alice", MatchStoreTestContext.Roster("alice", "bob"), SampleNextSceneName);
 
         var mallory = context.Join(
-            MatchStoreTestContext.FirstLobby, "mallory", MatchStoreTestContext.Roster("mallory", "alice", "bob"));
+            MatchStoreTestContext.FirstLobby, "mallory", MatchStoreTestContext.Roster("mallory", "alice", "bob"), SampleNextSceneName);
 
         var rejected = Assert.IsType<Rejected>(mallory);
         Assert.Equal(JoinFailureReason.RosterMismatch, rejected.Reason);
@@ -43,11 +45,11 @@ public sealed class InMemoryMatchStoreRosterTests
     {
         var context = new MatchStoreTestContext();
         var roster = MatchStoreTestContext.Roster("alice", "bob");
-        context.Join(MatchStoreTestContext.FirstLobby, "alice", roster);
+        context.Join(MatchStoreTestContext.FirstLobby, "alice", roster, SampleNextSceneName);
         context.Join(
-            MatchStoreTestContext.FirstLobby, "mallory", MatchStoreTestContext.Roster("mallory", "alice", "bob"));
+            MatchStoreTestContext.FirstLobby, "mallory", MatchStoreTestContext.Roster("mallory", "alice", "bob"), SampleNextSceneName);
 
-        var retry = context.Join(MatchStoreTestContext.FirstLobby, "alice", roster);
+        var retry = context.Join(MatchStoreTestContext.FirstLobby, "alice", roster, SampleNextSceneName);
 
         Assert.IsType<MemberAdded>(retry);
         Assert.NotNull(context.Store.FindMatchInLobby(MatchStoreTestContext.FirstLobby));
@@ -58,9 +60,9 @@ public sealed class InMemoryMatchStoreRosterTests
     {
         var context = new MatchStoreTestContext();
         var roster = MatchStoreTestContext.Roster("alice", "bob", "carol");
-        var firstAttempt = context.Join(MatchStoreTestContext.FirstLobby, "alice", roster);
+        var firstAttempt = context.Join(MatchStoreTestContext.FirstLobby, "alice", roster, SampleNextSceneName);
 
-        var retry = context.Join(MatchStoreTestContext.FirstLobby, "alice", roster);
+        var retry = context.Join(MatchStoreTestContext.FirstLobby, "alice", roster, SampleNextSceneName);
 
         var orphaned = await MatchStoreTestContext.FailureOf(firstAttempt);
         Assert.Equal(JoinFailureReason.SupersededByReconnect, orphaned.Reason);
@@ -80,12 +82,12 @@ public sealed class InMemoryMatchStoreRosterTests
     {
         var context = new MatchStoreTestContext();
         var roster = MatchStoreTestContext.Roster("alice", "bob");
-        var firstAttempt = context.Join(MatchStoreTestContext.FirstLobby, "alice", roster);
+        var firstAttempt = context.Join(MatchStoreTestContext.FirstLobby, "alice", roster, SampleNextSceneName);
         var originalToken = context.Store
             .FindMatch(MatchStoreTestContext.MatchIdOf(firstAttempt))!
             .Members[MatchStoreTestContext.Player("alice")].ServerAuthToken;
 
-        context.Join(MatchStoreTestContext.FirstLobby, "alice", roster);
+        context.Join(MatchStoreTestContext.FirstLobby, "alice", roster, SampleNextSceneName);
 
         var replacedToken = context.Store
             .FindMatch(MatchStoreTestContext.MatchIdOf(firstAttempt))!
@@ -98,9 +100,9 @@ public sealed class InMemoryMatchStoreRosterTests
     {
         var context = new MatchStoreTestContext();
         var roster = MatchStoreTestContext.Roster("alice", "bob");
-        context.StartMatch(MatchStoreTestContext.FirstLobby, "alice", "bob");
+        context.StartMatch(MatchStoreTestContext.FirstLobby, "TestScene", "alice", "bob");
 
-        var retry = context.Join(MatchStoreTestContext.FirstLobby, "alice", roster);
+        var retry = context.Join(MatchStoreTestContext.FirstLobby, "alice", roster, SampleNextSceneName);
 
         var rejected = Assert.IsType<Rejected>(retry);
         Assert.Equal(JoinFailureReason.MatchAlreadyStarted, rejected.Reason);
