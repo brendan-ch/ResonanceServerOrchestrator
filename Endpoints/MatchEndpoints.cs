@@ -56,8 +56,7 @@ public static class MatchEndpoints
             user.GetIdentity(),
             joiningPlayer.Username,
             request.ExpectedLobbyPlayers.Select(player => player.GetIdentity()).ToList(),
-            request.NextSceneName
-        );
+            request.NextSceneName, request.GameMode);
 
         return outcome switch
         {

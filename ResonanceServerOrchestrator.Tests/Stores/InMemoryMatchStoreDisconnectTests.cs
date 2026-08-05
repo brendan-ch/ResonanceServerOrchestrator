@@ -7,6 +7,7 @@ namespace ResonanceServerOrchestrator.Tests.Stores;
 public sealed class InMemoryMatchStoreDisconnectTests
 {
     private const string SampleNextSceneName = "TestScene";
+    private const string SampleGameMode = "Arena";
 
     private static readonly OrchestratorOptions FortyFiveSecondAssemblyBudget = new()
     {
@@ -19,8 +20,9 @@ public sealed class InMemoryMatchStoreDisconnectTests
     {
         var context = new MatchStoreTestContext();
         var roster = MatchStoreTestContext.Roster("alice", "bob", "carol");
-        var alice = context.Join(MatchStoreTestContext.FirstLobby, "alice", roster, SampleNextSceneName);
-        context.Join(MatchStoreTestContext.FirstLobby, "bob", roster, SampleNextSceneName);
+        var alice = context.Join(MatchStoreTestContext.FirstLobby, "alice", roster, SampleNextSceneName,
+            SampleGameMode);
+        context.Join(MatchStoreTestContext.FirstLobby, "bob", roster, SampleNextSceneName, SampleGameMode);
 
         context.AbortRequestOf(alice, "alice");
 
@@ -38,7 +40,7 @@ public sealed class InMemoryMatchStoreDisconnectTests
         var context = new MatchStoreTestContext();
         var alice = context.Join(
             MatchStoreTestContext.FirstLobby, "alice", MatchStoreTestContext.Roster("alice", "bob"),
-            SampleNextSceneName);
+            SampleNextSceneName, SampleGameMode);
 
         context.AbortRequestOf(alice, "alice");
 
@@ -51,11 +53,13 @@ public sealed class InMemoryMatchStoreDisconnectTests
     {
         var context = new MatchStoreTestContext(FortyFiveSecondAssemblyBudget);
         var roster = MatchStoreTestContext.Roster("alice", "bob");
-        var abandoned = context.Join(MatchStoreTestContext.FirstLobby, "alice", roster, SampleNextSceneName);
+        var abandoned = context.Join(MatchStoreTestContext.FirstLobby, "alice", roster, SampleNextSceneName,
+            SampleGameMode);
 
         context.Clock.Advance(TimeSpan.FromSeconds(10));
         context.AbortRequestOf(abandoned, "alice");
-        var retry = context.Join(MatchStoreTestContext.FirstLobby, "alice", roster, SampleNextSceneName);
+        var retry = context.Join(MatchStoreTestContext.FirstLobby, "alice", roster, SampleNextSceneName,
+            SampleGameMode);
 
         context.Clock.Advance(TimeSpan.FromSeconds(40));
         Assert.NotNull(context.Store.FindMatch(MatchStoreTestContext.MatchIdOf(retry)));
@@ -68,7 +72,8 @@ public sealed class InMemoryMatchStoreDisconnectTests
     public void ALaunchingDisconnectCompletesTheWaiterButKeepsTheMemberAndItsToken()
     {
         var context = new MatchStoreTestContext();
-        var assembled = context.AssembleRoster(MatchStoreTestContext.FirstLobby, "TestScene", "alice", "bob");
+        var assembled = context.AssembleRoster(MatchStoreTestContext.FirstLobby, "TestScene", SampleGameMode, "alice",
+            "bob");
 
         context.AbortRequestOf(assembled.OutcomeAt(0), "alice");
 
@@ -83,7 +88,8 @@ public sealed class InMemoryMatchStoreDisconnectTests
     public void AStartedDisconnectCompletesTheWaiterButKeepsTheMemberAndItsToken()
     {
         var context = new MatchStoreTestContext();
-        var assembled = context.StartMatch(MatchStoreTestContext.FirstLobby, "TestScene", "alice", "bob");
+        var assembled =
+            context.StartMatch(MatchStoreTestContext.FirstLobby, "TestScene", SampleGameMode, "alice", "bob");
 
         context.AbortRequestOf(assembled.OutcomeAt(0), "alice");
 
@@ -97,8 +103,10 @@ public sealed class InMemoryMatchStoreDisconnectTests
     {
         var context = new MatchStoreTestContext();
         var roster = MatchStoreTestContext.Roster("alice", "bob");
-        var supersededAttempt = context.Join(MatchStoreTestContext.FirstLobby, "alice", roster, SampleNextSceneName);
-        var replacementAttempt = context.Join(MatchStoreTestContext.FirstLobby, "alice", roster, SampleNextSceneName);
+        var supersededAttempt = context.Join(MatchStoreTestContext.FirstLobby, "alice", roster, SampleNextSceneName,
+            SampleGameMode);
+        var replacementAttempt = context.Join(MatchStoreTestContext.FirstLobby, "alice", roster, SampleNextSceneName,
+            SampleGameMode);
 
         context.AbortRequestOf(supersededAttempt, "alice");
 
@@ -114,7 +122,7 @@ public sealed class InMemoryMatchStoreDisconnectTests
         var context = new MatchStoreTestContext();
         var alice = context.Join(
             MatchStoreTestContext.FirstLobby, "alice", MatchStoreTestContext.Roster("alice", "bob"),
-            SampleNextSceneName);
+            SampleNextSceneName, SampleGameMode);
         context.AbortRequestOf(alice, "alice");
 
         context.AbortRequestOf(alice, "alice");

@@ -8,6 +8,7 @@ namespace ResonanceServerOrchestrator.Tests.Serialization;
 public sealed class PlatformUserInformationSerializationTests
 {
     private const string SampleNextSceneName = "TestScene";
+    private const string SampleGameMode = "Arena";
 
     private static readonly JsonSerializerOptions SerializerOptions =
         new JsonSerializerOptions(JsonSerializerDefaults.Web).ApplyOrchestratorConventions();
@@ -159,12 +160,13 @@ public sealed class PlatformUserInformationSerializationTests
     {
         var request = new JoinMatchDto(
             new PlatformUserInformationDto(Platform.Steam, "765", "109"),
-            [new ExpectedLobbyPlayerDto("ana", Platform.Steam, "765")], SampleNextSceneName);
+            [new ExpectedLobbyPlayerDto("ana", Platform.Steam, "765")], SampleNextSceneName, SampleGameMode);
 
         var written = JsonSerializer.Serialize(request, SerializerOptions);
 
         Assert.DoesNotContain("identity", written, StringComparison.OrdinalIgnoreCase);
     }
+
 
 
     [Fact]
@@ -188,7 +190,8 @@ public sealed class PlatformUserInformationSerializationTests
                               "expectedLobbyPlayers": [
                                 { "username": "ana", "platform": 0, "platformUserId": "76561197960287930" }
                               ],
-                              "nextSceneName": "TestScene"
+                              "nextSceneName": "TestScene",
+                              "gameMode": "Arena"
                             }
                             """;
 

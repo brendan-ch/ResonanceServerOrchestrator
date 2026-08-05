@@ -150,7 +150,7 @@ public sealed class SteamAuthenticationEndpointTests : IDisposable
 
         var stranger = await _client.PostJoinAsync(
             MatchRequests.JoinBody(
-                "76561198000000099", LobbyId, ["76561198000000099"], "stranger-ticket"),
+                "76561198000000099", LobbyId, ["76561198000000099"],"stranger-ticket"),
             cancellation.Token);
 
         Assert.Equal(HttpStatusCode.Unauthorized, stranger.StatusCode);

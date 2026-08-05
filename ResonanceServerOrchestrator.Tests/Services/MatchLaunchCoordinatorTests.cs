@@ -22,7 +22,8 @@ public sealed class MatchLaunchCoordinatorTests
         MatchKey,
         7777,
         [new MatchMemberDto(Platform.Steam, "76561198000000001", "alice", "token")],
-        "TestScene");
+        "TestScene",
+        "Arena");
 
     private MatchLaunchCoordinator CreateCoordinator() =>
         new(_store, _launcher,

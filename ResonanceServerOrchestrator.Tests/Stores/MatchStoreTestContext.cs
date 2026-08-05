@@ -32,20 +32,23 @@ internal sealed class MatchStoreTestContext
 
     public static string UsernameOf(string platformUserId) => $"{platformUserId}-display-name";
 
-    public JoinOutcome Join(LobbyKey lobby, string platformUserId, IReadOnlyList<PlayerIdentity> roster, string nextSceneName) =>
-        Store.TryJoin(lobby, Player(platformUserId), UsernameOf(platformUserId), roster, nextSceneName);
+    public JoinOutcome Join(LobbyKey lobby, string platformUserId, IReadOnlyList<PlayerIdentity> roster,
+        string nextSceneName, string gameMode) =>
+        Store.TryJoin(lobby, Player(platformUserId), UsernameOf(platformUserId), roster, nextSceneName, gameMode);
 
-    public AssembledMatch AssembleRoster(LobbyKey lobby, string nextSceneName, params string[] platformUserIds)
+    public AssembledMatch AssembleRoster(LobbyKey lobby, string nextSceneName, string gameMode,
+        params string[] platformUserIds)
     {
         var roster = Roster(platformUserIds);
-        var outcomes = platformUserIds.Select(id => Join(lobby, id, roster, nextSceneName)).ToArray();
+        var outcomes = platformUserIds.Select(id => Join(lobby, id, roster, nextSceneName, gameMode)).ToArray();
         var rosterComplete = Assert.Single(outcomes.OfType<RosterComplete>());
         return new AssembledMatch(rosterComplete.Snapshot, outcomes);
     }
 
-    public AssembledMatch StartMatch(LobbyKey lobby, string nextSceneName, params string[] platformUserIds)
+    public AssembledMatch StartMatch(LobbyKey lobby, string nextSceneName, string gameMode,
+        params string[] platformUserIds)
     {
-        var assembled = AssembleRoster(lobby, "TestScene", platformUserIds);
+        var assembled = AssembleRoster(lobby, nextSceneName, gameMode, platformUserIds);
         Assert.Equal(
             MarkReadyOutcome.MatchStarted,
             Store.MarkReady(assembled.Snapshot.MatchId, assembled.Snapshot.MatchKey));

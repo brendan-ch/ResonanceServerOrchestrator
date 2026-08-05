@@ -22,6 +22,7 @@ namespace ResonanceServerOrchestrator.Tests.Serialization;
 public sealed class UnitySerializerCompatibilityTests
 {
     private const string SampleNextSceneName = "TestScene";
+    private const string SampleGameMode = "Arena";
 
     private static readonly JsonSerializerOptions OrchestratorOptions =
         new JsonSerializerOptions(JsonSerializerDefaults.Web).ApplyOrchestratorConventions();
@@ -102,7 +103,7 @@ public sealed class UnitySerializerCompatibilityTests
             [
                 new ExpectedLobbyPlayerDto("ana", Platform.Steam, "76561198000000001"),
                 new ExpectedLobbyPlayerDto("bo", Platform.Steam, "76561198000000002"),
-            ], SampleNextSceneName));
+            ], SampleNextSceneName, SampleGameMode));
 
         var read = JsonSerializer.Deserialize<JoinMatchDto>(written, OrchestratorOptions)
                    ?? throw new InvalidOperationException("The join request bound to null.");
@@ -138,7 +139,8 @@ public sealed class UnitySerializerCompatibilityTests
         var request = new JoinMatchDto(
             new PlatformUserInformationDto(
                 Platform.Dummy, "76561198000000001", "lobby-1", "14000000AABB"),
-            [new ExpectedLobbyPlayerDto("ana", Platform.Steam, "76561198000000001")], SampleNextSceneName);
+            [new ExpectedLobbyPlayerDto("ana", Platform.Steam, "76561198000000001")], SampleNextSceneName,
+            SampleGameMode);
 
         Assert.Equal(OrchestratorWrites(request), UnityWrites(request));
     }

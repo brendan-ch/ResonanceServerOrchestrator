@@ -8,12 +8,16 @@ namespace ResonanceServerOrchestrator.Tests.Stores;
 
 public sealed class InMemoryMatchStoreGameInstanceTests
 {
+    private const string SampleGameMode = "Arena";
+    private const string NextSceneName = "TestScene";
+
     [Fact]
     public void RegisteringAnInstanceOnAMatchAlreadyFlippedToStartedSucceedsAndDoesNotStopTheProcess()
     {
         var context = new MatchStoreTestContext();
         var instance = Substitute.For<IGameInstance>();
-        var assembled = context.StartMatch(MatchStoreTestContext.FirstLobby, "TestScene", "alice", "bob");
+        var assembled =
+            context.StartMatch(MatchStoreTestContext.FirstLobby, NextSceneName, SampleGameMode, "alice", "bob");
 
         Assert.True(context.Store.TrySetInstance(assembled.Snapshot.MatchId, instance));
 
@@ -21,11 +25,13 @@ public sealed class InMemoryMatchStoreGameInstanceTests
         Assert.Same(instance, context.Store.FindMatch(assembled.Snapshot.MatchId)!.Instance);
     }
 
+
     [Fact]
     public void RegisteringAnInstanceOnADestroyedMatchFails()
     {
         var context = new MatchStoreTestContext();
-        var assembled = context.AssembleRoster(MatchStoreTestContext.FirstLobby, "TestScene", "alice", "bob");
+        var assembled = context.AssembleRoster(MatchStoreTestContext.FirstLobby, NextSceneName, SampleGameMode, "alice",
+            "bob");
         context.Store.TryLeave(MatchStoreTestContext.Player("alice"));
 
         Assert.False(context.Store.TrySetInstance(
@@ -38,7 +44,8 @@ public sealed class InMemoryMatchStoreGameInstanceTests
         var context = new MatchStoreTestContext();
         var instance = Substitute.For<IGameInstance>();
         instance.HasExited.Returns(true);
-        var assembled = context.AssembleRoster(MatchStoreTestContext.FirstLobby, "TestScene", "alice", "bob");
+        var assembled = context.AssembleRoster(MatchStoreTestContext.FirstLobby, NextSceneName, SampleGameMode, "alice",
+            "bob");
 
         context.Store.TrySetInstance(assembled.Snapshot.MatchId, instance);
 
@@ -53,7 +60,8 @@ public sealed class InMemoryMatchStoreGameInstanceTests
     {
         var context = new MatchStoreTestContext();
         var instance = Substitute.For<IGameInstance>();
-        var assembled = context.AssembleRoster(MatchStoreTestContext.FirstLobby, "TestScene", "alice", "bob");
+        var assembled = context.AssembleRoster(MatchStoreTestContext.FirstLobby, NextSceneName, SampleGameMode, "alice",
+            "bob");
         context.Store.TrySetInstance(assembled.Snapshot.MatchId, instance);
 
         instance.Exited += Raise.Event<EventHandler>(instance, EventArgs.Empty);
@@ -69,7 +77,8 @@ public sealed class InMemoryMatchStoreGameInstanceTests
     {
         var context = new MatchStoreTestContext();
         var instance = Substitute.For<IGameInstance>();
-        var assembled = context.StartMatch(MatchStoreTestContext.FirstLobby, "TestScene", "alice", "bob");
+        var assembled =
+            context.StartMatch(MatchStoreTestContext.FirstLobby, NextSceneName, SampleGameMode, "alice", "bob");
         context.Store.TrySetInstance(assembled.Snapshot.MatchId, instance);
         var alreadySucceeded = await MatchStoreTestContext.SuccessOf(assembled.OutcomeAt(0));
 
@@ -78,14 +87,16 @@ public sealed class InMemoryMatchStoreGameInstanceTests
         Assert.NotNull(alreadySucceeded);
         Assert.Equal(0, context.Store.LiveMatchCount);
         Assert.IsType<MemberAdded>(context.Join(
-            MatchStoreTestContext.SecondLobby, "carol", MatchStoreTestContext.Roster("carol", "dave"), "TestScene"));
+            MatchStoreTestContext.SecondLobby, "carol", MatchStoreTestContext.Roster("carol", "dave"), NextSceneName,
+            SampleGameMode));
     }
 
     [Fact]
     public void AnExitForAMatchThatIsAlreadyGoneIsANoOp()
     {
         var context = new MatchStoreTestContext();
-        var assembled = context.AssembleRoster(MatchStoreTestContext.FirstLobby, "TestScene", "alice", "bob");
+        var assembled = context.AssembleRoster(MatchStoreTestContext.FirstLobby, NextSceneName, SampleGameMode, "alice",
+            "bob");
         context.Store.TryLeave(MatchStoreTestContext.Player("alice"));
 
         context.Store.OnInstanceExited(assembled.Snapshot.MatchId);

@@ -8,6 +8,7 @@ namespace ResonanceServerOrchestrator.Tests.Stores;
 public sealed class InMemoryMatchStoreDeadlineTests
 {
     private const string SampleNextSceneName = "TestScene";
+    private const string SampleGameMode = "Arena";
 
     private static readonly OrchestratorOptions ShortAssemblyLongReadyBudgets = new()
     {
@@ -27,7 +28,7 @@ public sealed class InMemoryMatchStoreDeadlineTests
         var context = new MatchStoreTestContext(ShortAssemblyLongReadyBudgets);
         var alice = context.Join(
             MatchStoreTestContext.FirstLobby, "alice", MatchStoreTestContext.Roster("alice", "bob"),
-            SampleNextSceneName);
+            SampleNextSceneName, SampleGameMode);
 
         context.Clock.Advance(TimeSpan.FromSeconds(46));
 
@@ -38,15 +39,16 @@ public sealed class InMemoryMatchStoreDeadlineTests
         Assert.Null(context.Store.FindMatchInLobby(MatchStoreTestContext.FirstLobby));
     }
 
+
     [Fact]
     public void TheRosterAssemblyDeadlineIsSharedByTheMatchRatherThanRestartedPerJoin()
     {
         var context = new MatchStoreTestContext(ShortAssemblyLongReadyBudgets);
         var roster = MatchStoreTestContext.Roster("alice", "bob", "carol");
-        context.Join(MatchStoreTestContext.FirstLobby, "alice", roster, SampleNextSceneName);
+        context.Join(MatchStoreTestContext.FirstLobby, "alice", roster, SampleNextSceneName, SampleGameMode);
 
         context.Clock.Advance(TimeSpan.FromSeconds(30));
-        context.Join(MatchStoreTestContext.FirstLobby, "bob", roster, SampleNextSceneName);
+        context.Join(MatchStoreTestContext.FirstLobby, "bob", roster, SampleNextSceneName, SampleGameMode);
         context.Clock.Advance(TimeSpan.FromSeconds(16));
 
         Assert.Null(context.Store.FindMatchInLobby(MatchStoreTestContext.FirstLobby));
@@ -57,7 +59,7 @@ public sealed class InMemoryMatchStoreDeadlineTests
     {
         var context = new MatchStoreTestContext(ShortAssemblyLongReadyBudgets);
 
-        var assembled = context.AssembleRoster(MatchStoreTestContext.FirstLobby, "TestScene", "alice", "bob");
+        var assembled = context.AssembleRoster(MatchStoreTestContext.FirstLobby, "TestScene", SampleGameMode, "alice", "bob");
         context.Clock.Advance(TimeSpan.FromSeconds(120));
 
         var match = context.Store.FindMatch(assembled.Snapshot.MatchId);
@@ -71,7 +73,7 @@ public sealed class InMemoryMatchStoreDeadlineTests
     public async Task TheServerReadyDeadlineDestroysTheLaunchingMatchAndReleasesItsWaiters()
     {
         var context = new MatchStoreTestContext(LongAssemblyShortReadyBudgets);
-        var assembled = context.AssembleRoster(MatchStoreTestContext.FirstLobby, "TestScene", "alice", "bob");
+        var assembled = context.AssembleRoster(MatchStoreTestContext.FirstLobby, "TestScene", SampleGameMode, "alice", "bob");
 
         context.Clock.Advance(TimeSpan.FromSeconds(31));
 
@@ -85,10 +87,10 @@ public sealed class InMemoryMatchStoreDeadlineTests
     {
         var context = new MatchStoreTestContext(LongAssemblyShortReadyBudgets);
         var roster = MatchStoreTestContext.Roster("alice", "bob");
-        context.Join(MatchStoreTestContext.FirstLobby, "alice", roster, SampleNextSceneName);
+        context.Join(MatchStoreTestContext.FirstLobby, "alice", roster, SampleNextSceneName, SampleGameMode);
 
         context.Clock.Advance(TimeSpan.FromSeconds(40));
-        var bob = context.Join(MatchStoreTestContext.FirstLobby, "bob", roster, SampleNextSceneName);
+        var bob = context.Join(MatchStoreTestContext.FirstLobby, "bob", roster, SampleNextSceneName, SampleGameMode);
         context.Clock.Advance(TimeSpan.FromSeconds(29));
 
         Assert.NotNull(context.Store.FindMatch(MatchStoreTestContext.MatchIdOf(bob)));
@@ -99,7 +101,7 @@ public sealed class InMemoryMatchStoreDeadlineTests
     {
         var context = new MatchStoreTestContext(LongAssemblyShortReadyBudgets);
 
-        var assembled = context.StartMatch(MatchStoreTestContext.FirstLobby, "TestScene", "alice", "bob");
+        var assembled = context.StartMatch(MatchStoreTestContext.FirstLobby, "TestScene", SampleGameMode, "alice", "bob");
         context.Clock.Advance(TimeSpan.FromSeconds(120));
 
         var match = context.Store.FindMatch(assembled.Snapshot.MatchId);
@@ -111,7 +113,7 @@ public sealed class InMemoryMatchStoreDeadlineTests
     public void ADeadlineExpiryLeavesATombstoneSoALateReadyCallbackIsToldTheMatchWasDestroyed()
     {
         var context = new MatchStoreTestContext(LongAssemblyShortReadyBudgets);
-        var assembled = context.AssembleRoster(MatchStoreTestContext.FirstLobby, "TestScene", "alice", "bob");
+        var assembled = context.AssembleRoster(MatchStoreTestContext.FirstLobby, "TestScene", SampleGameMode, "alice", "bob");
 
         context.Clock.Advance(TimeSpan.FromSeconds(31));
 

@@ -5,12 +5,11 @@ namespace ResonanceServerOrchestrator.Stores;
 
 internal interface IMatchStore
 {
-    JoinOutcome TryJoin(
-        LobbyKey lobby,
+    JoinOutcome TryJoin(LobbyKey lobby,
         PlayerIdentity identity,
         string username,
         IReadOnlyList<PlayerIdentity> expectedRoster,
-        string expectedNextSceneName);
+        string expectedNextSceneName, string expectedGameMode);
 
     bool TrySetInstance(Guid matchId, IGameInstance instance);
 

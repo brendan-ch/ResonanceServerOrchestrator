@@ -49,7 +49,8 @@ internal sealed class MatchLaunchCoordinator(
                 [GameServerLaunchSpec.MatchIdVariable] = snapshot.MatchId.ToString("D"),
                 [GameServerLaunchSpec.MatchKeyVariable] = snapshot.MatchKey,
                 [GameServerLaunchSpec.OrchestratorUrlVariable] = configuration.OrchestratorUrl,
-                [GameServerLaunchSpec.NextSceneNameVariable] = snapshot.NextSceneName
+                [GameServerLaunchSpec.NextSceneNameVariable] = snapshot.NextSceneName,
+                [GameServerLaunchSpec.GameModeVariable] = snapshot.GameMode
             });
     }
 }

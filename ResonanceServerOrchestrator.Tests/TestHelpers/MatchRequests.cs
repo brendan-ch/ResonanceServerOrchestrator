@@ -23,12 +23,13 @@ internal static class MatchRequests
         platformUserId,
     };
 
-    public static object JoinBody(
-        string platformUserId,
+    public static object JoinBody(string platformUserId,
         string lobbyId,
         IEnumerable<string> rosterPlatformUserIds,
         string? authenticationTicketHex = null,
-        string nextSceneName = "TestScene") => new
+        string nextSceneName = "TestScene",
+        string gameMode = "Arena"
+    ) => new
     {
         platformUserInformation = new
         {
@@ -40,7 +41,8 @@ internal static class MatchRequests
         expectedLobbyPlayers = rosterPlatformUserIds
             .Select(id => Player(id, $"player-{id}"))
             .ToArray(),
-        nextSceneName
+        nextSceneName,
+        gameMode
     };
 
     public static object LeaveBody(string platformUserId, string lobbyId) => new
