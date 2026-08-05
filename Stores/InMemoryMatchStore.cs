@@ -440,7 +440,7 @@ internal sealed class InMemoryMatchStore(IOptions<OrchestratorOptions> options, 
         MatchMember.Register(identity, username, MintSecret(), ++_lastIssuedMemberGeneration);
 
     private MatchSnapshot CreateSnapshot(MatchState match) =>
-        new(match.MatchId, match.MatchKey, Options.GameServerPort, match.MembersInCanonicalRosterOrder());
+        new(match.MatchId, match.MatchKey, Options.GameServerPort, match.MembersInCanonicalRosterOrder(), match.NextSceneName);
 
     private MarkReadyOutcome DescribeAbsentMatch(Guid matchId, string presentedMatchKey)
     {

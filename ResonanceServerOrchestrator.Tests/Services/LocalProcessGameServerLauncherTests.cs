@@ -35,14 +35,16 @@ public sealed class LocalProcessGameServerLauncherTests : IDisposable
             [GameServerLaunchSpec.MatchKeyVariable] = "a-match-key",
             [GameServerLaunchSpec.OrchestratorUrlVariable] = "http://orchestrator:9000",
             [GameServerLaunchSpec.GameServerPortVariable] = "7777",
+            [GameServerLaunchSpec.NextSceneNameVariable] = "TestScene"
         };
 
         var script =
-            $"printf '%s\\n%s\\n%s\\n%s' " +
+            $"printf '%s\\n%s\\n%s\\n%s\\n%s' " +
             $"\\\"${GameServerLaunchSpec.MatchIdVariable}\\\" " +
             $"\\\"${GameServerLaunchSpec.MatchKeyVariable}\\\" " +
             $"\\\"${GameServerLaunchSpec.OrchestratorUrlVariable}\\\" " +
-            $"\\\"${GameServerLaunchSpec.GameServerPortVariable}\\\" > {outputPath}";
+            $"\\\"${GameServerLaunchSpec.GameServerPortVariable}\\\" " +
+            $"\\\"${GameServerLaunchSpec.NextSceneNameVariable}\\\" > {outputPath}";
 
         var instance = _launcher.Launch(ShellSpec(script, environment));
 
@@ -54,6 +56,7 @@ public sealed class LocalProcessGameServerLauncherTests : IDisposable
                 "a-match-key",
                 "http://orchestrator:9000",
                 "7777",
+                "TestScene"
             ],
             File.ReadAllLines(outputPath));
     }

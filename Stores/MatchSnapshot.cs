@@ -6,4 +6,6 @@ internal sealed record MatchSnapshot(
     Guid MatchId,
     string MatchKey,
     int GameServerPort,
-    IReadOnlyList<MatchMemberDto> Members);
+    IReadOnlyList<MatchMemberDto> Members,
+    string NextSceneName
+);

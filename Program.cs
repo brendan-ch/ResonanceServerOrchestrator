@@ -1,7 +1,6 @@
 using System.Runtime.CompilerServices;
 using System.Threading.RateLimiting;
 using Asp.Versioning;
-using Microsoft.AspNetCore.RateLimiting;
 using ResonanceServerOrchestrator.Configuration;
 using ResonanceServerOrchestrator.Endpoints;
 using ResonanceServerOrchestrator.Serialization;
