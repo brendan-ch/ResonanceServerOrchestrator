@@ -32,7 +32,8 @@ public static class MatchEndpoints
         PlayerTicketAuthenticator authenticator,
         MatchLaunchCoordinator launchCoordinator,
         IOptions<OrchestratorOptions> options,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken
+    )
     {
         if (!JoinMatchRequestValidator.TryValidate(
                 request, options.Value, out var joiningPlayer, out var problem))
