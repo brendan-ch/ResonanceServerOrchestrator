@@ -6,7 +6,7 @@ namespace Resonance.Contracts
             ExpectedLobbyPlayerDto[] expectedLobbyPlayers,
             string nextSceneName,
             string gameMode,
-            string? intendedServerVersion = null
+            string intendedServerVersion = "dev"
         )
         {
             PlatformUserInformation = platformUserInformation;
@@ -22,12 +22,12 @@ namespace Resonance.Contracts
         public string GameMode { get; }
 
         /// <summary>
-        /// An optional string indicating which server version to use.
+        /// Indicates which server version to use.
         /// It must match with the version injected into the server build,
-        /// including if there is no server version.
+        /// including if there is no server version, in which case this may be empty.
         ///
         /// The Edgegap launcher backend also uses this to look up the server version.
         /// </summary>
-        public string? IntendedServerVersion { get; }
+        public string IntendedServerVersion { get; }
     }
 }

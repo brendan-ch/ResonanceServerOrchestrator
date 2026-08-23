@@ -1,6 +1,5 @@
 using System.Net;
 using System.Net.Http.Json;
-using NSubstitute;
 using Resonance.Contracts;
 using ResonanceServerOrchestrator.Endpoints;
 using ResonanceServerOrchestrator.Services;
@@ -31,9 +30,18 @@ public sealed class JoinMatchEndpointTests : IDisposable
 
     private static readonly string[] BothPlayers = [FirstPlayer, SecondPlayer];
 
-    private Task<HttpResponseMessage> JoinAsync(string platformUserId, CancellationToken token) =>
+    private Task<HttpResponseMessage> JoinAsync(string platformUserId,
+        CancellationToken token,
+        string? intendedServerVersion = null
+    ) =>
         _client.PostJoinAsync(
-            MatchRequests.JoinBody(platformUserId, LobbyId, BothPlayers), token);
+            MatchRequests.JoinBody(
+                platformUserId,
+                LobbyId,
+                BothPlayers,
+                intendedServerVersion: intendedServerVersion
+            ),
+            token);
 
     private Task<Guid> BothPlayersParkedAsync() =>
         _factory.Store.WhenMemberCountReaches(new LobbyKey(Platform.Steam, LobbyId), 2);
@@ -205,14 +213,41 @@ public sealed class JoinMatchEndpointTests : IDisposable
 
         Assert.Equal(HttpStatusCode.Conflict, mismatched.StatusCode);
 
-        var mismatchedFailure = await mismatched.Content.ReadFromJsonAsync<JoinFailureDto>(MatchRequests.SerializerOptions);
+        var mismatchedFailure =
+            await mismatched.Content.ReadFromJsonAsync<JoinFailureDto>(MatchRequests.SerializerOptions);
         Assert.Equal(JoinFailureReason.RosterMismatch, mismatchedFailure!.Reason);
 
         var firstResponse = await first;
         Assert.Equal(HttpStatusCode.Conflict, firstResponse.StatusCode);
 
-        var firstFailure = await firstResponse.Content.ReadFromJsonAsync<JoinFailureDto>(MatchRequests.SerializerOptions);
+        var firstFailure =
+            await firstResponse.Content.ReadFromJsonAsync<JoinFailureDto>(MatchRequests.SerializerOptions);
         Assert.Equal(JoinFailureReason.RosterMismatch, firstFailure!.Reason);
+    }
+
+    [Fact]
+    public async Task Join_MismatchedIntendedServerVersion_DiscardsTheMatchAndReleasesEveryone()
+    {
+        using var cancellation = new CancellationTokenSource(TestBudget);
+
+        var first = JoinAsync(FirstPlayer, cancellation.Token, "server-1");
+        var second = JoinAsync(SecondPlayer, cancellation.Token, "server-2");
+
+        var secondResponse = await second;
+        Assert.Equal(HttpStatusCode.Conflict, secondResponse.StatusCode);
+
+        var mismatchedFailure =
+            await secondResponse.Content.ReadFromJsonAsync<JoinFailureDto>(MatchRequests.SerializerOptions,
+                cancellationToken: cancellation.Token);
+        Assert.Equal(JoinFailureReason.OtherDataMismatch, mismatchedFailure!.Reason);
+
+        var firstResponse = await first;
+        Assert.Equal(HttpStatusCode.Conflict, firstResponse.StatusCode);
+
+        var firstFailure =
+            await firstResponse.Content.ReadFromJsonAsync<JoinFailureDto>(MatchRequests.SerializerOptions,
+                cancellationToken: cancellation.Token);
+        Assert.Equal(JoinFailureReason.OtherDataMismatch, firstFailure!.Reason);
     }
 
     [Fact]
