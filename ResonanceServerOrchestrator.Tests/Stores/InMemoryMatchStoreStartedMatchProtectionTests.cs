@@ -11,11 +11,12 @@ public sealed class InMemoryMatchStoreStartedMatchProtectionTests
     private static readonly LobbyKey Lobby = MatchStoreTestContext.FirstLobby;
     private const string SampleNextSceneName = "TestScene";
     private const string SampleGameMode = "Arena";
+    private const string SampleIntendedServerVersion = "test-server-version";
 
     private static MatchStoreTestContext StartedMatchWithInstance(out IGameInstance instance)
     {
         var context = new MatchStoreTestContext();
-        var assembled = context.AssembleRoster(Lobby, SampleNextSceneName, SampleGameMode, "alice", "bob");
+        var assembled = context.AssembleRoster(Lobby, SampleNextSceneName, SampleGameMode, SampleIntendedServerVersion, "alice", "bob");
 
         instance = Substitute.For<IGameInstance>();
         instance.HasExited.Returns(false);
@@ -34,7 +35,7 @@ public sealed class InMemoryMatchStoreStartedMatchProtectionTests
     {
         var context = StartedMatchWithInstance(out var instance);
 
-        var outcome = context.Join(Lobby, "attacker", MatchStoreTestContext.Roster("attacker"), SampleNextSceneName, SampleGameMode);
+        var outcome = context.Join(Lobby, "attacker", MatchStoreTestContext.Roster("attacker"), SampleNextSceneName, SampleGameMode, SampleIntendedServerVersion);
 
         var rejected = Assert.IsType<Rejected>(outcome);
         Assert.Equal(JoinFailureReason.MatchAlreadyStarted, rejected.Reason);
@@ -50,7 +51,7 @@ public sealed class InMemoryMatchStoreStartedMatchProtectionTests
         var match = Assert.Single(
             new[] { context.Store.FindMatchInLobby(Lobby) }.OfType<MatchState>());
 
-        context.Join(Lobby, "attacker", MatchStoreTestContext.Roster("attacker", "accomplice"), SampleNextSceneName, SampleGameMode);
+        context.Join(Lobby, "attacker", MatchStoreTestContext.Roster("attacker", "accomplice"), SampleNextSceneName, SampleGameMode, SampleIntendedServerVersion);
 
         var lookup = context.Store.LookUpSnapshotForGameServer(match.MatchId, match.MatchKey);
 
@@ -62,9 +63,9 @@ public sealed class InMemoryMatchStoreStartedMatchProtectionTests
     public void AMismatchedRosterStillDiscardsAMatchThatHasNotStarted()
     {
         var context = new MatchStoreTestContext();
-        context.Join(Lobby, "alice", MatchStoreTestContext.Roster("alice", "bob"), SampleNextSceneName, SampleGameMode);
+        context.Join(Lobby, "alice", MatchStoreTestContext.Roster("alice", "bob"), SampleNextSceneName, SampleGameMode, SampleIntendedServerVersion);
 
-        var outcome = context.Join(Lobby, "bob", MatchStoreTestContext.Roster("bob", "carol"), SampleNextSceneName, SampleGameMode);
+        var outcome = context.Join(Lobby, "bob", MatchStoreTestContext.Roster("bob", "carol"), SampleNextSceneName, SampleGameMode, SampleIntendedServerVersion);
 
         Assert.Equal(JoinFailureReason.RosterMismatch, Assert.IsType<Rejected>(outcome).Reason);
         Assert.Equal(0, context.Store.LiveMatchCount);

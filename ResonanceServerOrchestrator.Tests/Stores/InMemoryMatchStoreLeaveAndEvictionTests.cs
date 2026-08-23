@@ -11,6 +11,7 @@ public sealed class InMemoryMatchStoreLeaveAndEvictionTests
 {
     private const string SampleNextSceneName = "TestScene";
     private const string SampleGameMode = "Arena";
+    private const string SampleIntendedServerVersion = "test-server-version";
     private static readonly OrchestratorOptions TwoConcurrentMatches = new() { MaxMatches = 2 };
 
     [Fact]
@@ -19,8 +20,8 @@ public sealed class InMemoryMatchStoreLeaveAndEvictionTests
         var context = new MatchStoreTestContext();
         var roster = MatchStoreTestContext.Roster("alice", "bob", "carol");
         var alice = context.Join(MatchStoreTestContext.FirstLobby, "alice", roster, SampleNextSceneName,
-            SampleGameMode);
-        var bob = context.Join(MatchStoreTestContext.FirstLobby, "bob", roster, SampleNextSceneName, SampleGameMode);
+            SampleGameMode, SampleIntendedServerVersion);
+        var bob = context.Join(MatchStoreTestContext.FirstLobby, "bob", roster, SampleNextSceneName, SampleGameMode, SampleIntendedServerVersion);
 
         Assert.True(context.Store.TryLeave(MatchStoreTestContext.Player("bob")));
 
@@ -36,7 +37,7 @@ public sealed class InMemoryMatchStoreLeaveAndEvictionTests
         var context = new MatchStoreTestContext();
         var instance = Substitute.For<IGameInstance>();
         var assembled =
-            context.StartMatch(MatchStoreTestContext.FirstLobby, "TestScene", SampleGameMode, "alice", "bob");
+            context.StartMatch(MatchStoreTestContext.FirstLobby, "TestScene", SampleGameMode, SampleIntendedServerVersion, "alice", "bob");
         context.Store.TrySetInstance(assembled.Snapshot.MatchId, instance);
 
         Assert.True(context.Store.TryLeave(MatchStoreTestContext.Player("alice")));
@@ -53,7 +54,7 @@ public sealed class InMemoryMatchStoreLeaveAndEvictionTests
         var context = new MatchStoreTestContext();
         var instance = Substitute.For<IGameInstance>();
         var assembled =
-            context.StartMatch(MatchStoreTestContext.FirstLobby, "TestScene", SampleGameMode, "alice", "bob");
+            context.StartMatch(MatchStoreTestContext.FirstLobby, "TestScene", SampleGameMode, SampleIntendedServerVersion, "alice", "bob");
         context.Store.TrySetInstance(assembled.Snapshot.MatchId, instance);
 
         context.Store.TryLeave(MatchStoreTestContext.Player("alice"));
@@ -77,7 +78,7 @@ public sealed class InMemoryMatchStoreLeaveAndEvictionTests
         var context = new MatchStoreTestContext();
         var alice = context.Join(
             MatchStoreTestContext.FirstLobby, "alice", MatchStoreTestContext.Roster("alice", "bob"),
-            SampleNextSceneName, SampleGameMode);
+            SampleNextSceneName, SampleGameMode, SampleIntendedServerVersion);
 
         Assert.True(context.Store.TryTearDownForFailedAuth(
             MatchStoreTestContext.FirstLobby, MatchStoreTestContext.Player("bob")));
@@ -93,7 +94,7 @@ public sealed class InMemoryMatchStoreLeaveAndEvictionTests
     {
         var context = new MatchStoreTestContext();
         context.Join(MatchStoreTestContext.FirstLobby, "alice", MatchStoreTestContext.Roster("alice", "bob"),
-            SampleNextSceneName, SampleGameMode);
+            SampleNextSceneName, SampleGameMode, SampleIntendedServerVersion);
 
         Assert.False(context.Store.TryTearDownForFailedAuth(
             MatchStoreTestContext.FirstLobby, MatchStoreTestContext.Player("mallory")));
@@ -107,7 +108,7 @@ public sealed class InMemoryMatchStoreLeaveAndEvictionTests
         var context = new MatchStoreTestContext();
         var instance = Substitute.For<IGameInstance>();
         var assembled =
-            context.StartMatch(MatchStoreTestContext.FirstLobby, "TestScene", SampleGameMode, "alice", "bob");
+            context.StartMatch(MatchStoreTestContext.FirstLobby, "TestScene", SampleGameMode, SampleIntendedServerVersion, "alice", "bob");
         context.Store.TrySetInstance(assembled.Snapshot.MatchId, instance);
 
         Assert.False(context.Store.TryTearDownForFailedAuth(
@@ -132,13 +133,13 @@ public sealed class InMemoryMatchStoreLeaveAndEvictionTests
         var context = new MatchStoreTestContext(TwoConcurrentMatches);
         var firstLobbyRoster = MatchStoreTestContext.Roster("alice", "bob");
         var alice = context.Join(MatchStoreTestContext.FirstLobby, "alice", firstLobbyRoster, SampleNextSceneName,
-            SampleGameMode);
+            SampleGameMode, SampleIntendedServerVersion);
         var bob = context.Join(MatchStoreTestContext.FirstLobby, "bob", firstLobbyRoster, SampleNextSceneName,
-            SampleGameMode);
+            SampleGameMode, SampleIntendedServerVersion);
 
         var secondLobbyAttempt = context.Join(
             MatchStoreTestContext.SecondLobby, "alice", MatchStoreTestContext.Roster("alice", "carol"),
-            SampleNextSceneName, SampleGameMode);
+            SampleNextSceneName, SampleGameMode, SampleIntendedServerVersion);
 
         var rejected = Assert.IsType<Rejected>(secondLobbyAttempt);
         Assert.Equal(JoinFailureReason.PlayerInMultipleLobbies, rejected.Reason);
@@ -154,12 +155,12 @@ public sealed class InMemoryMatchStoreLeaveAndEvictionTests
         var context = new MatchStoreTestContext(TwoConcurrentMatches);
         var instance = Substitute.For<IGameInstance>();
         var assembled =
-            context.StartMatch(MatchStoreTestContext.FirstLobby, "TestScene", SampleGameMode, "alice", "bob");
+            context.StartMatch(MatchStoreTestContext.FirstLobby, "TestScene", SampleGameMode, SampleIntendedServerVersion, "alice", "bob");
         context.Store.TrySetInstance(assembled.Snapshot.MatchId, instance);
 
         var secondLobbyAttempt = context.Join(
             MatchStoreTestContext.SecondLobby, "alice", MatchStoreTestContext.Roster("alice", "carol"),
-            SampleNextSceneName, SampleGameMode);
+            SampleNextSceneName, SampleGameMode, SampleIntendedServerVersion);
 
         Assert.Equal(
             JoinFailureReason.PlayerInMultipleLobbies, Assert.IsType<Rejected>(secondLobbyAttempt).Reason);
@@ -175,10 +176,10 @@ public sealed class InMemoryMatchStoreLeaveAndEvictionTests
     {
         var context = new MatchStoreTestContext(TwoConcurrentMatches);
         var roster = MatchStoreTestContext.Roster("alice", "bob");
-        context.Join(MatchStoreTestContext.FirstLobby, "alice", roster, SampleNextSceneName, SampleGameMode);
+        context.Join(MatchStoreTestContext.FirstLobby, "alice", roster, SampleNextSceneName, SampleGameMode, SampleIntendedServerVersion);
 
         var retry = context.Join(MatchStoreTestContext.FirstLobby, "alice", roster, SampleNextSceneName,
-            SampleGameMode);
+            SampleGameMode, SampleIntendedServerVersion);
 
         Assert.IsType<MemberAdded>(retry);
         Assert.NotNull(context.Store.FindMatchInLobby(MatchStoreTestContext.FirstLobby));

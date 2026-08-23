@@ -8,6 +8,7 @@ public sealed class InMemoryMatchStoreServerCallbackTests
 {
     private const string SampleNextSceneName = "TestScene";
     private const string SampleGameMode = "Arena";
+    private const string SampleIntendedServerVersion = "test-server-version";
 
     [Fact]
     public void ReadyOnAPendingMatchReportsThatTheRosterIsNotYetComplete()
@@ -15,7 +16,7 @@ public sealed class InMemoryMatchStoreServerCallbackTests
         var context = new MatchStoreTestContext();
         var alice = context.Join(
             MatchStoreTestContext.FirstLobby, "alice", MatchStoreTestContext.Roster("alice", "bob"),
-            SampleNextSceneName, SampleGameMode);
+            SampleNextSceneName, SampleGameMode, SampleIntendedServerVersion);
         var match = context.Store.FindMatch(MatchStoreTestContext.MatchIdOf(alice))!;
 
         Assert.Equal(
@@ -27,7 +28,7 @@ public sealed class InMemoryMatchStoreServerCallbackTests
     {
         var context = new MatchStoreTestContext();
         var assembled =
-            context.StartMatch(MatchStoreTestContext.FirstLobby, "TestScene", SampleGameMode, "alice", "bob");
+            context.StartMatch(MatchStoreTestContext.FirstLobby, "TestScene", SampleGameMode, SampleIntendedServerVersion, "alice", "bob");
 
         Assert.Equal(
             MarkReadyOutcome.MatchWasAlreadyStarted,
@@ -39,7 +40,7 @@ public sealed class InMemoryMatchStoreServerCallbackTests
     public void ReadyWithTheWrongMatchKeyIsRejected()
     {
         var context = new MatchStoreTestContext();
-        var assembled = context.AssembleRoster(MatchStoreTestContext.FirstLobby, "TestScene", SampleGameMode, "alice",
+        var assembled = context.AssembleRoster(MatchStoreTestContext.FirstLobby, "TestScene", SampleGameMode, SampleIntendedServerVersion, "alice",
             "bob");
 
         Assert.Equal(
@@ -60,7 +61,7 @@ public sealed class InMemoryMatchStoreServerCallbackTests
     public void ATombstoneDistinguishesADestroyedMatchFromOneThatNeverExisted()
     {
         var context = new MatchStoreTestContext();
-        var assembled = context.AssembleRoster(MatchStoreTestContext.FirstLobby, "TestScene", SampleGameMode, "alice",
+        var assembled = context.AssembleRoster(MatchStoreTestContext.FirstLobby, "TestScene", SampleGameMode, SampleIntendedServerVersion, "alice",
             "bob");
         context.Store.TryLeave(MatchStoreTestContext.Player("alice"));
 
@@ -75,7 +76,7 @@ public sealed class InMemoryMatchStoreServerCallbackTests
     public void ATombstoneStillAuthenticatesTheMatchKey()
     {
         var context = new MatchStoreTestContext();
-        var assembled = context.AssembleRoster(MatchStoreTestContext.FirstLobby, "TestScene", SampleGameMode, "alice",
+        var assembled = context.AssembleRoster(MatchStoreTestContext.FirstLobby, "TestScene", SampleGameMode, SampleIntendedServerVersion, "alice",
             "bob");
         context.Store.TryLeave(MatchStoreTestContext.Player("alice"));
 
@@ -89,7 +90,7 @@ public sealed class InMemoryMatchStoreServerCallbackTests
     {
         var context = new MatchStoreTestContext();
         var assembled =
-            context.StartMatch(MatchStoreTestContext.FirstLobby, "TestScene", SampleGameMode, "alice", "bob");
+            context.StartMatch(MatchStoreTestContext.FirstLobby, "TestScene", SampleGameMode, SampleIntendedServerVersion, "alice", "bob");
 
         var granted = context.Store.LookUpSnapshotForGameServer(
             assembled.Snapshot.MatchId, assembled.Snapshot.MatchKey);
@@ -112,10 +113,10 @@ public sealed class InMemoryMatchStoreServerCallbackTests
             ServerReadyTimeoutSeconds = 3600
         });
         var roster = MatchStoreTestContext.Roster("alice", "bob");
-        context.Join(MatchStoreTestContext.FirstLobby, "alice", roster, SampleNextSceneName, SampleGameMode);
+        context.Join(MatchStoreTestContext.FirstLobby, "alice", roster, SampleNextSceneName, SampleGameMode, SampleIntendedServerVersion);
         context.Clock.Advance(TimeSpan.FromMinutes(20));
         var assembled =
-            context.StartMatch(MatchStoreTestContext.FirstLobby, "TestScene", SampleGameMode, "alice", "bob");
+            context.StartMatch(MatchStoreTestContext.FirstLobby, "TestScene", SampleGameMode, SampleIntendedServerVersion, "alice", "bob");
 
         context.Clock.Advance(TimeSpan.FromMinutes(25));
         context.Store.ReapExpired();
@@ -130,7 +131,7 @@ public sealed class InMemoryMatchStoreServerCallbackTests
     public void ReapingRemovesTombstonesOnlyAfterTheRetentionWindow()
     {
         var context = new MatchStoreTestContext(new OrchestratorOptions { TombstoneRetentionMinutes = 10 });
-        var assembled = context.AssembleRoster(MatchStoreTestContext.FirstLobby, "TestScene", SampleGameMode, "alice",
+        var assembled = context.AssembleRoster(MatchStoreTestContext.FirstLobby, "TestScene", SampleGameMode, SampleIntendedServerVersion, "alice",
             "bob");
         context.Store.TryLeave(MatchStoreTestContext.Player("alice"));
 

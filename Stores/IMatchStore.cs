@@ -9,7 +9,9 @@ internal interface IMatchStore
         PlayerIdentity identity,
         string username,
         IReadOnlyList<PlayerIdentity> expectedRoster,
-        string expectedNextSceneName, string expectedGameMode);
+        string expectedNextSceneName,
+        string expectedGameMode,
+        string expectedIntendedServerVersion);
 
     bool TrySetInstance(Guid matchId, IGameInstance instance);
 

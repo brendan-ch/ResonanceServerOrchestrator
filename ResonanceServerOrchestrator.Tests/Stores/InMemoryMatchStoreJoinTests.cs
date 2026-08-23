@@ -9,6 +9,7 @@ public sealed class InMemoryMatchStoreJoinTests
 {
     private const string SampleNextSceneName = "TestScene";
     private const string SampleGameMode = "Arena";
+    private const string SampleIntendedServerVersion = "test-server-version";
 
     [Fact]
     public void TheFirstJoinerOfAMultiPlayerRosterIsParkedAsAMember()
@@ -17,7 +18,7 @@ public sealed class InMemoryMatchStoreJoinTests
 
         var outcome = context.Join(
             MatchStoreTestContext.FirstLobby, "alice", MatchStoreTestContext.Roster("alice", "bob"),
-            SampleNextSceneName, SampleGameMode);
+            SampleNextSceneName, SampleGameMode, SampleIntendedServerVersion);
 
         var added = Assert.IsType<MemberAdded>(outcome);
         Assert.False(added.Completion.IsCompleted);
@@ -30,7 +31,7 @@ public sealed class InMemoryMatchStoreJoinTests
     {
         var context = new MatchStoreTestContext();
 
-        var assembled = context.AssembleRoster(MatchStoreTestContext.FirstLobby, "TestScene", SampleGameMode, "alice",
+        var assembled = context.AssembleRoster(MatchStoreTestContext.FirstLobby, "TestScene", SampleGameMode, SampleIntendedServerVersion, "alice",
             "bob");
 
         Assert.IsType<MemberAdded>(assembled.OutcomeAt(0));
@@ -45,7 +46,7 @@ public sealed class InMemoryMatchStoreJoinTests
 
         var outcome = context.Join(
             MatchStoreTestContext.FirstLobby, "alice", MatchStoreTestContext.Roster("alice"), SampleNextSceneName,
-            SampleGameMode);
+            SampleGameMode, SampleIntendedServerVersion);
 
         var rosterComplete = Assert.IsType<RosterComplete>(outcome);
         Assert.Equal(MatchStatus.Launching, context.Store.FindMatch(rosterComplete.MatchId)!.Status);
@@ -56,7 +57,7 @@ public sealed class InMemoryMatchStoreJoinTests
     {
         var context = new MatchStoreTestContext();
 
-        var assembled = context.AssembleRoster(MatchStoreTestContext.FirstLobby, "TestScene", SampleGameMode, "alice",
+        var assembled = context.AssembleRoster(MatchStoreTestContext.FirstLobby, "TestScene", SampleGameMode, SampleIntendedServerVersion, "alice",
             "bob");
 
         Assert.All(assembled.Outcomes, outcome =>
@@ -69,7 +70,7 @@ public sealed class InMemoryMatchStoreJoinTests
         var context = new MatchStoreTestContext(
             new OrchestratorOptions { GameServerHost = "game.example", GameServerPort = 7801 });
 
-        var assembled = context.AssembleRoster(MatchStoreTestContext.FirstLobby, "TestScene", SampleGameMode, "alice",
+        var assembled = context.AssembleRoster(MatchStoreTestContext.FirstLobby, "TestScene", SampleGameMode, SampleIntendedServerVersion, "alice",
             "bob");
         context.Store.MarkReady(assembled.Snapshot.MatchId, assembled.Snapshot.MatchKey);
 
@@ -89,7 +90,7 @@ public sealed class InMemoryMatchStoreJoinTests
             new OrchestratorOptions { GameServerHost = "game.example", GameServerPort = 7801 });
 
         var snapshot = context
-            .AssembleRoster(MatchStoreTestContext.FirstLobby, "TestScene", SampleGameMode, "alice", "bob").Snapshot;
+            .AssembleRoster(MatchStoreTestContext.FirstLobby, "TestScene", SampleGameMode, SampleIntendedServerVersion, "alice", "bob").Snapshot;
 
         Assert.Equal(7801, snapshot.GameServerPort);
         Assert.NotEmpty(snapshot.MatchKey);
@@ -105,11 +106,11 @@ public sealed class InMemoryMatchStoreJoinTests
         var context = new MatchStoreTestContext();
 
         var first = context
-            .AssembleRoster(MatchStoreTestContext.FirstLobby, "TestScene", SampleGameMode, "alice", "bob").Snapshot;
+            .AssembleRoster(MatchStoreTestContext.FirstLobby, "TestScene", SampleGameMode, SampleIntendedServerVersion, "alice", "bob").Snapshot;
         context.Store.MarkReady(first.MatchId, first.MatchKey);
         context.Store.OnInstanceExited(first.MatchId);
         var second = context
-            .AssembleRoster(MatchStoreTestContext.SecondLobby, "TestScene", SampleGameMode, "carol", "dave").Snapshot;
+            .AssembleRoster(MatchStoreTestContext.SecondLobby, "TestScene", SampleGameMode, SampleIntendedServerVersion, "carol", "dave").Snapshot;
 
         var secrets = new[] { first.MatchKey, second.MatchKey }
             .Concat(first.Members.Select(member => member.ServerAuthToken))
@@ -128,10 +129,10 @@ public sealed class InMemoryMatchStoreJoinTests
 
         var signal = context.Store.WhenMemberCountReaches(MatchStoreTestContext.FirstLobby, 2);
         var alice = context.Join(MatchStoreTestContext.FirstLobby, "alice", roster, SampleNextSceneName,
-            SampleGameMode);
+            SampleGameMode, SampleIntendedServerVersion);
         Assert.False(signal.IsCompleted);
 
-        context.Join(MatchStoreTestContext.FirstLobby, "bob", roster, SampleNextSceneName, SampleGameMode);
+        context.Join(MatchStoreTestContext.FirstLobby, "bob", roster, SampleNextSceneName, SampleGameMode, SampleIntendedServerVersion);
 
         Assert.Equal(MatchStoreTestContext.MatchIdOf(alice), await signal.WaitAsync(TimeSpan.FromSeconds(10)));
     }
@@ -142,7 +143,7 @@ public sealed class InMemoryMatchStoreJoinTests
         var context = new MatchStoreTestContext();
         var alice = context.Join(
             MatchStoreTestContext.FirstLobby, "alice", MatchStoreTestContext.Roster("alice", "bob"),
-            SampleNextSceneName, SampleGameMode);
+            SampleNextSceneName, SampleGameMode, SampleIntendedServerVersion);
 
         var signal = context.Store.WhenMemberCountReaches(MatchStoreTestContext.FirstLobby, 1);
 

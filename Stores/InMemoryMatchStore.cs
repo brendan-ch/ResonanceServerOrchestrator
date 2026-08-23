@@ -32,7 +32,9 @@ internal sealed class InMemoryMatchStore(IOptions<OrchestratorOptions> options, 
         PlayerIdentity identity,
         string username,
         IReadOnlyList<PlayerIdentity> expectedRoster,
-        string expectedNextSceneName, string expectedGameMode)
+        string expectedNextSceneName,
+        string expectedGameMode,
+        string expectedIntendedServerVersion)
     {
         lock (_mutationLock)
         {
@@ -41,8 +43,10 @@ internal sealed class InMemoryMatchStore(IOptions<OrchestratorOptions> options, 
                 return multiLobbyRejection;
 
             return TryFindMatchInLobby(lobby) is { } existingMatch
-                ? JoinExistingMatch(existingMatch, identity, username, expectedRoster, expectedNextSceneName, expectedGameMode)
-                : CreateMatch(lobby, identity, username, expectedRoster, expectedNextSceneName, expectedGameMode);
+                ? JoinExistingMatch(existingMatch, identity, username, expectedRoster, expectedNextSceneName,
+                    expectedGameMode, expectedIntendedServerVersion)
+                : CreateMatch(lobby, identity, username, expectedRoster, expectedNextSceneName, expectedGameMode,
+                    expectedIntendedServerVersion);
         }
     }
 
@@ -249,7 +253,10 @@ internal sealed class InMemoryMatchStore(IOptions<OrchestratorOptions> options, 
     private JoinOutcome JoinExistingMatch(MatchState match,
         PlayerIdentity identity,
         string username,
-        IReadOnlyList<PlayerIdentity> expectedRoster, string expectedNextSceneName, string expectedGameMode)
+        IReadOnlyList<PlayerIdentity> expectedRoster,
+        string expectedNextSceneName,
+        string expectedGameMode,
+        string expectedIntendedServerVersion)
     {
         if (match.Status is MatchStatus.Started)
             return new Rejected(
@@ -263,7 +270,8 @@ internal sealed class InMemoryMatchStore(IOptions<OrchestratorOptions> options, 
             return rejection;
         }
 
-        if (match.NextSceneName != expectedNextSceneName || match.GameMode != expectedGameMode)
+        if (match.NextSceneName != expectedNextSceneName || match.GameMode != expectedGameMode ||
+            match.IntendedServerVersion != expectedIntendedServerVersion)
         {
             var rejection = new Rejected(JoinFailureReason.OtherDataMismatch, match.JoinedCount, match.ExpectedCount);
             DestroyWithFailure(match, JoinFailureReason.OtherDataMismatch);
@@ -302,7 +310,9 @@ internal sealed class InMemoryMatchStore(IOptions<OrchestratorOptions> options, 
         PlayerIdentity identity,
         string username,
         IReadOnlyList<PlayerIdentity> expectedRoster,
-        string expectedNextSceneName, string expectedGameMode)
+        string expectedNextSceneName,
+        string expectedGameMode,
+        string expectedIntendedServerVersion)
     {
         if (_matchesById.Count >= Options.MaxMatches)
             return new Rejected(JoinFailureReason.CapacityReached, 0, 0);
@@ -319,7 +329,8 @@ internal sealed class InMemoryMatchStore(IOptions<OrchestratorOptions> options, 
             CreatedAt = timeProvider.GetUtcNow(),
             Members = ImmutableDictionary<PlayerIdentity, MatchMember>.Empty.Add(identity, firstMember),
             NextSceneName = expectedNextSceneName,
-            GameMode = expectedGameMode
+            GameMode = expectedGameMode,
+            IntendedServerVersion = expectedIntendedServerVersion
         };
 
         _deadlineTimersByMatchId[matchId] = new MatchDeadlineTimers();
