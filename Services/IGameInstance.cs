@@ -3,6 +3,6 @@ namespace ResonanceServerOrchestrator.Services;
 public interface IGameInstance
 {
     bool HasExited { get; }
-    void Stop();
+    Task Stop();
     event EventHandler? Exited;
 }
