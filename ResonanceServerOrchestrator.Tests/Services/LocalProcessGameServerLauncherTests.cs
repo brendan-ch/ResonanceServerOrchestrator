@@ -26,27 +26,27 @@ public sealed class LocalProcessGameServerLauncherTests : IDisposable
         new("/bin/sh", $"-c \"{script}\"", environment);
 
     [Fact]
-    public void Launch_MakesEveryEnvironmentEntryVisibleToTheProcess()
+    public async Task Launch_MakesEveryEnvironmentEntryVisibleToTheProcess()
     {
         var outputPath = CreateTemporaryPath();
         var environment = new Dictionary<string, string>
         {
-            [LocalGameServerLaunchSpec.MatchIdVariable] = "11111111-2222-3333-4444-555555555555",
-            [LocalGameServerLaunchSpec.MatchKeyVariable] = "a-match-key",
-            [LocalGameServerLaunchSpec.OrchestratorUrlVariable] = "http://orchestrator:9000",
-            [LocalGameServerLaunchSpec.GameServerPortVariable] = "7777",
-            [LocalGameServerLaunchSpec.NextSceneNameVariable] = "TestScene"
+            [GameServerLaunchSpec.MatchIdVariable] = "11111111-2222-3333-4444-555555555555",
+            [GameServerLaunchSpec.MatchKeyVariable] = "a-match-key",
+            [GameServerLaunchSpec.OrchestratorUrlVariable] = "http://orchestrator:9000",
+            [GameServerLaunchSpec.GameServerPortVariable] = "7777",
+            [GameServerLaunchSpec.NextSceneNameVariable] = "TestScene"
         };
 
         var script =
             $"printf '%s\\n%s\\n%s\\n%s\\n%s' " +
-            $"\\\"${LocalGameServerLaunchSpec.MatchIdVariable}\\\" " +
-            $"\\\"${LocalGameServerLaunchSpec.MatchKeyVariable}\\\" " +
-            $"\\\"${LocalGameServerLaunchSpec.OrchestratorUrlVariable}\\\" " +
-            $"\\\"${LocalGameServerLaunchSpec.GameServerPortVariable}\\\" " +
-            $"\\\"${LocalGameServerLaunchSpec.NextSceneNameVariable}\\\" > {outputPath}";
+            $"\\\"${GameServerLaunchSpec.MatchIdVariable}\\\" " +
+            $"\\\"${GameServerLaunchSpec.MatchKeyVariable}\\\" " +
+            $"\\\"${GameServerLaunchSpec.OrchestratorUrlVariable}\\\" " +
+            $"\\\"${GameServerLaunchSpec.GameServerPortVariable}\\\" " +
+            $"\\\"${GameServerLaunchSpec.NextSceneNameVariable}\\\" > {outputPath}";
 
-        var instance = _launcher.Launch(ShellSpec(script, environment));
+        var instance = await _launcher.Launch(ShellSpec(script, environment));
 
         WaitForExit(instance);
 
@@ -58,29 +58,29 @@ public sealed class LocalProcessGameServerLauncherTests : IDisposable
                 "7777",
                 "TestScene"
             ],
-            File.ReadAllLines(outputPath));
+            await File.ReadAllLinesAsync(outputPath));
     }
 
     [Fact]
-    public void Launch_PassesArgumentsToTheProcess()
+    public async Task Launch_PassesArgumentsToTheProcess()
     {
         var outputPath = CreateTemporaryPath();
 
-        var instance = _launcher.Launch(
+        var instance = await _launcher.Launch(
             ShellSpec($"printf 'ran' > {outputPath}", new Dictionary<string, string>()));
 
         WaitForExit(instance);
 
-        Assert.Equal("ran", File.ReadAllText(outputPath));
+        Assert.Equal("ran", await File.ReadAllTextAsync(outputPath));
     }
 
     [Fact]
-    public void Launch_MissingExecutable_ThrowsGameServerLaunchException()
+    public async Task Launch_MissingExecutable_ThrowsGameServerLaunchException()
     {
         var spec = new LocalGameServerLaunchSpec(
             "/nonexistent/resonance-server-binary", string.Empty, new Dictionary<string, string>());
 
-        Assert.Throws<GameServerLaunchException>(() => _launcher.Launch(spec));
+        await Assert.ThrowsAsync<GameServerLaunchException>(() => _launcher.Launch(spec));
     }
 
     [Fact]
@@ -90,23 +90,23 @@ public sealed class LocalProcessGameServerLauncherTests : IDisposable
     }
 
     [Fact]
-    public void Stop_TerminatesALongRunningProcess()
+    public async Task Stop_TerminatesALongRunningProcess()
     {
-        var instance = _launcher.Launch(
+        var instance = await _launcher.Launch(
             ShellSpec("sleep 60", new Dictionary<string, string>()));
 
         Assert.False(instance.HasExited);
 
-        instance.Stop();
+        await instance.Stop();
 
         WaitForExit(instance);
         Assert.True(instance.HasExited);
     }
 
     [Fact]
-    public void HasExited_BecomesTrueAfterTheProcessEnds()
+    public async Task HasExited_BecomesTrueAfterTheProcessEnds()
     {
-        var instance = _launcher.Launch(ShellSpec("exit 0", new Dictionary<string, string>()));
+        var instance = await _launcher.Launch(ShellSpec("exit 0", new Dictionary<string, string>()));
 
         WaitForExit(instance);
 
@@ -118,7 +118,7 @@ public sealed class LocalProcessGameServerLauncherTests : IDisposable
     {
         var exited = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
 
-        var instance = _launcher.Launch(ShellSpec("exit 0", new Dictionary<string, string>()));
+        var instance = await _launcher.Launch(ShellSpec("exit 0", new Dictionary<string, string>()));
         instance.Exited += (_, _) => exited.TrySetResult();
 
         await exited.Task.WaitAsync(TimeSpan.FromSeconds(10));

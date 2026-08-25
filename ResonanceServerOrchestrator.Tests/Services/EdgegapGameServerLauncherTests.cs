@@ -1,4 +1,4 @@
-using ResonanceServerOrchestrator.Services;
+using NSubstitute;
 using ResonanceServerOrchestrator.Services.Edgegap;
 using Xunit;
 
@@ -6,18 +6,17 @@ namespace ResonanceServerOrchestrator.Tests.Services;
 
 public sealed class EdgegapGameServerLauncherTests : IDisposable
 {
-    private StubEdgegapClient? _edgegapClient;
+    private readonly IEdgegapClient _edgegapClient = Substitute.For<IEdgegapClient>();
     private EdgegapGameServerLauncher? _launcher;
 
     private void SetupEdgegapLauncherWithMockEdgegapClient()
     {
-        _edgegapClient = new StubEdgegapClient();
         _launcher = new EdgegapGameServerLauncher(_edgegapClient);
     }
 
     public void Dispose()
     {
-        _edgegapClient = null;
+        // called after each test executes
         _launcher = null;
     }
 
@@ -25,6 +24,13 @@ public sealed class EdgegapGameServerLauncherTests : IDisposable
     public void Launch_CallsEdgegapPostDeploymentWithIntendedServerVersion()
     {
         SetupEdgegapLauncherWithMockEdgegapClient();
+        var response = new EdgegapDeploymentResponse(
+            RequestId: Guid.NewGuid().ToString(),
+            Message: "Hello world"
+        );
+
+        _edgegapClient.DeployAsync(Arg.Any<EdgegapDeploymentRequest>(), Arg.Any<CancellationToken>())
+            .Returns(response);
     }
 
     [Fact]

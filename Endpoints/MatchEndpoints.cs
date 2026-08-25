@@ -82,7 +82,7 @@ public static class MatchEndpoints
         PlayerIdentity identity,
         CancellationToken cancellationToken)
     {
-        launchCoordinator.LaunchGameServerFor(rosterComplete.Snapshot);
+        await launchCoordinator.LaunchGameServerFor(rosterComplete.Snapshot);
 
         return await AwaitCompletionAsync(
             rosterComplete.MatchId, rosterComplete.MemberGeneration, rosterComplete.Completion,

@@ -10,12 +10,12 @@ internal sealed class MatchLaunchCoordinator(
     IOptions<OrchestratorOptions> options,
     ILogger<MatchLaunchCoordinator> logger)
 {
-    public void LaunchGameServerFor(MatchSnapshot snapshot)
+    public async Task LaunchGameServerFor(MatchSnapshot snapshot)
     {
         IGameInstance instance;
         try
         {
-            instance = launcher.Launch(BuildLaunchSpec(snapshot));
+            instance = await launcher.Launch(BuildLaunchSpec(snapshot));
         }
         catch (Exception exception)
         {
@@ -44,13 +44,13 @@ internal sealed class MatchLaunchCoordinator(
             configuration.UnityServerBaseArgs,
             new Dictionary<string, string>
             {
-                [LocalGameServerLaunchSpec.GameServerPortVariable] =
+                [GameServerLaunchSpec.GameServerPortVariable] =
                     snapshot.GameServerPort.ToString(),
-                [LocalGameServerLaunchSpec.MatchIdVariable] = snapshot.MatchId.ToString("D"),
-                [LocalGameServerLaunchSpec.MatchKeyVariable] = snapshot.MatchKey,
-                [LocalGameServerLaunchSpec.OrchestratorUrlVariable] = configuration.OrchestratorUrl,
-                [LocalGameServerLaunchSpec.NextSceneNameVariable] = snapshot.NextSceneName,
-                [LocalGameServerLaunchSpec.GameModeVariable] = snapshot.GameMode
+                [GameServerLaunchSpec.MatchIdVariable] = snapshot.MatchId.ToString("D"),
+                [GameServerLaunchSpec.MatchKeyVariable] = snapshot.MatchKey,
+                [GameServerLaunchSpec.OrchestratorUrlVariable] = configuration.OrchestratorUrl,
+                [GameServerLaunchSpec.NextSceneNameVariable] = snapshot.NextSceneName,
+                [GameServerLaunchSpec.GameModeVariable] = snapshot.GameMode
             });
     }
 }

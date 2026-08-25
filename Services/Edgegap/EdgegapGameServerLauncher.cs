@@ -5,7 +5,7 @@ public sealed class EdgegapGameServerLauncher(IEdgegapClient client) : IGameServ
     private IEdgegapClient _client = client;
 
     public bool ReportsReadiness => true;
-    public IGameInstance Launch(GameServerLaunchSpec spec)
+    public Task<IGameInstance> Launch(GameServerLaunchSpec spec)
     {
         throw new NotImplementedException();
     }
