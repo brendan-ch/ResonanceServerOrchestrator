@@ -35,22 +35,22 @@ internal sealed class MatchLaunchCoordinator(
             store.MarkReady(snapshot.MatchId, snapshot.MatchKey);
     }
 
-    private GameServerLaunchSpec BuildLaunchSpec(MatchSnapshot snapshot)
+    private LocalGameServerLaunchSpec BuildLaunchSpec(MatchSnapshot snapshot)
     {
         var configuration = options.Value;
 
-        return new GameServerLaunchSpec(
+        return new LocalGameServerLaunchSpec(
             configuration.UnityServerPath,
             configuration.UnityServerBaseArgs,
             new Dictionary<string, string>
             {
-                [GameServerLaunchSpec.GameServerPortVariable] =
+                [LocalGameServerLaunchSpec.GameServerPortVariable] =
                     snapshot.GameServerPort.ToString(),
-                [GameServerLaunchSpec.MatchIdVariable] = snapshot.MatchId.ToString("D"),
-                [GameServerLaunchSpec.MatchKeyVariable] = snapshot.MatchKey,
-                [GameServerLaunchSpec.OrchestratorUrlVariable] = configuration.OrchestratorUrl,
-                [GameServerLaunchSpec.NextSceneNameVariable] = snapshot.NextSceneName,
-                [GameServerLaunchSpec.GameModeVariable] = snapshot.GameMode
+                [LocalGameServerLaunchSpec.MatchIdVariable] = snapshot.MatchId.ToString("D"),
+                [LocalGameServerLaunchSpec.MatchKeyVariable] = snapshot.MatchKey,
+                [LocalGameServerLaunchSpec.OrchestratorUrlVariable] = configuration.OrchestratorUrl,
+                [LocalGameServerLaunchSpec.NextSceneNameVariable] = snapshot.NextSceneName,
+                [LocalGameServerLaunchSpec.GameModeVariable] = snapshot.GameMode
             });
     }
 }

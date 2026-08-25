@@ -449,7 +449,7 @@ internal sealed class InMemoryMatchStore(IOptions<OrchestratorOptions> options, 
 
     private MatchSnapshot CreateSnapshot(MatchState match) =>
         new(match.MatchId, match.MatchKey, Options.LocalGameServerInternalAndExternalPort, match.MembersInCanonicalRosterOrder(),
-            match.NextSceneName, match.GameMode);
+            match.NextSceneName, match.GameMode, match.IntendedServerVersion);
 
     private MarkReadyOutcome DescribeAbsentMatch(Guid matchId, string presentedMatchKey)
     {

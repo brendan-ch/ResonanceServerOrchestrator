@@ -22,7 +22,7 @@ internal sealed class OrchestratorWebApplicationFactory : WebApplicationFactory<
     public ISteamTicketValidator TicketValidatorSubstitute { get; } =
         Substitute.For<ISteamTicketValidator>();
 
-    private readonly TaskCompletionSource<GameServerLaunchSpec> _launchObserved =
+    private readonly TaskCompletionSource<LocalGameServerLaunchSpec> _launchObserved =
         new(TaskCreationOptions.RunContinuationsAsynchronously);
 
     public OrchestratorWebApplicationFactory(
@@ -33,10 +33,10 @@ internal sealed class OrchestratorWebApplicationFactory : WebApplicationFactory<
             : new Dictionary<string, string?>(configurationOverrides);
 
         LauncherSubstitute.ReportsReadiness.Returns(true);
-        LauncherSubstitute.Launch(Arg.Any<GameServerLaunchSpec>())
+        LauncherSubstitute.Launch(Arg.Any<LocalGameServerLaunchSpec>())
             .Returns(call =>
             {
-                _launchObserved.TrySetResult(call.Arg<GameServerLaunchSpec>());
+                _launchObserved.TrySetResult(call.Arg<LocalGameServerLaunchSpec>());
                 return new NullGameInstance();
             });
     }
@@ -44,7 +44,7 @@ internal sealed class OrchestratorWebApplicationFactory : WebApplicationFactory<
     internal InMemoryMatchStore Store =>
         (InMemoryMatchStore)Services.GetRequiredService<IMatchStore>();
 
-    internal Task<GameServerLaunchSpec> LaunchObserved => _launchObserved.Task;
+    internal Task<LocalGameServerLaunchSpec> LaunchObserved => _launchObserved.Task;
 
     internal bool HasLaunched => _launchObserved.Task.IsCompleted;
 

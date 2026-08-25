@@ -7,8 +7,13 @@ public sealed class LocalProcessGameServerLauncher : IGameServerLauncher
 {
     public bool ReportsReadiness => true;
 
-    public IGameInstance Launch(GameServerLaunchSpec spec)
+    public IGameInstance Launch(GameServerLaunchSpec genericSpec)
     {
+        if (genericSpec is not LocalGameServerLaunchSpec spec)
+        {
+            throw new GameServerLaunchException("Invalid launch spec");
+        }
+
         var startInfo = new ProcessStartInfo
         {
             FileName = spec.ExecutablePath,

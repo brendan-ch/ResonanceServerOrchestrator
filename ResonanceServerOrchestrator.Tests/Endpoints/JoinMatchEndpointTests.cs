@@ -53,7 +53,7 @@ public sealed class JoinMatchEndpointTests : IDisposable
             HttpMethod.Post, $"/v1/server/matches/{matchId:D}/ready");
         request.Headers.Add(
             ServerEndpoints.MatchKeyHeader,
-            spec.Environment[GameServerLaunchSpec.MatchKeyVariable]);
+            spec.Environment[LocalGameServerLaunchSpec.MatchKeyVariable]);
 
         var response = await _client.SendAsync(request);
         Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
@@ -101,13 +101,13 @@ public sealed class JoinMatchEndpointTests : IDisposable
 
         Assert.Equal(
             matchId.ToString("D"),
-            spec.Environment[GameServerLaunchSpec.MatchIdVariable]);
-        Assert.Equal("7777", spec.Environment[GameServerLaunchSpec.GameServerPortVariable]);
+            spec.Environment[LocalGameServerLaunchSpec.MatchIdVariable]);
+        Assert.Equal("7777", spec.Environment[LocalGameServerLaunchSpec.GameServerPortVariable]);
         Assert.Equal(
             "http://orchestrator.test",
-            spec.Environment[GameServerLaunchSpec.OrchestratorUrlVariable]);
+            spec.Environment[LocalGameServerLaunchSpec.OrchestratorUrlVariable]);
         Assert.False(string.IsNullOrWhiteSpace(
-            spec.Environment[GameServerLaunchSpec.MatchKeyVariable]));
+            spec.Environment[LocalGameServerLaunchSpec.MatchKeyVariable]));
 
         await ReportServerReadyAsync(matchId);
         await Task.WhenAll(first, second);

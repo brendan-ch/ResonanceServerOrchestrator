@@ -8,7 +8,8 @@ internal sealed record MatchSnapshot(
     int GameServerPort,
     IReadOnlyList<MatchMemberDto> Members,
     string NextSceneName,
-    string GameMode
+    string GameMode,
+    string IntendedServerVersion
 )
 {
 }

@@ -21,7 +21,7 @@ public sealed class LocalProcessGameServerLauncherTests : IDisposable
         return path;
     }
 
-    private static GameServerLaunchSpec ShellSpec(
+    private static LocalGameServerLaunchSpec ShellSpec(
         string script, IReadOnlyDictionary<string, string> environment) =>
         new("/bin/sh", $"-c \"{script}\"", environment);
 
@@ -31,20 +31,20 @@ public sealed class LocalProcessGameServerLauncherTests : IDisposable
         var outputPath = CreateTemporaryPath();
         var environment = new Dictionary<string, string>
         {
-            [GameServerLaunchSpec.MatchIdVariable] = "11111111-2222-3333-4444-555555555555",
-            [GameServerLaunchSpec.MatchKeyVariable] = "a-match-key",
-            [GameServerLaunchSpec.OrchestratorUrlVariable] = "http://orchestrator:9000",
-            [GameServerLaunchSpec.GameServerPortVariable] = "7777",
-            [GameServerLaunchSpec.NextSceneNameVariable] = "TestScene"
+            [LocalGameServerLaunchSpec.MatchIdVariable] = "11111111-2222-3333-4444-555555555555",
+            [LocalGameServerLaunchSpec.MatchKeyVariable] = "a-match-key",
+            [LocalGameServerLaunchSpec.OrchestratorUrlVariable] = "http://orchestrator:9000",
+            [LocalGameServerLaunchSpec.GameServerPortVariable] = "7777",
+            [LocalGameServerLaunchSpec.NextSceneNameVariable] = "TestScene"
         };
 
         var script =
             $"printf '%s\\n%s\\n%s\\n%s\\n%s' " +
-            $"\\\"${GameServerLaunchSpec.MatchIdVariable}\\\" " +
-            $"\\\"${GameServerLaunchSpec.MatchKeyVariable}\\\" " +
-            $"\\\"${GameServerLaunchSpec.OrchestratorUrlVariable}\\\" " +
-            $"\\\"${GameServerLaunchSpec.GameServerPortVariable}\\\" " +
-            $"\\\"${GameServerLaunchSpec.NextSceneNameVariable}\\\" > {outputPath}";
+            $"\\\"${LocalGameServerLaunchSpec.MatchIdVariable}\\\" " +
+            $"\\\"${LocalGameServerLaunchSpec.MatchKeyVariable}\\\" " +
+            $"\\\"${LocalGameServerLaunchSpec.OrchestratorUrlVariable}\\\" " +
+            $"\\\"${LocalGameServerLaunchSpec.GameServerPortVariable}\\\" " +
+            $"\\\"${LocalGameServerLaunchSpec.NextSceneNameVariable}\\\" > {outputPath}";
 
         var instance = _launcher.Launch(ShellSpec(script, environment));
 
@@ -77,7 +77,7 @@ public sealed class LocalProcessGameServerLauncherTests : IDisposable
     [Fact]
     public void Launch_MissingExecutable_ThrowsGameServerLaunchException()
     {
-        var spec = new GameServerLaunchSpec(
+        var spec = new LocalGameServerLaunchSpec(
             "/nonexistent/resonance-server-binary", string.Empty, new Dictionary<string, string>());
 
         Assert.Throws<GameServerLaunchException>(() => _launcher.Launch(spec));

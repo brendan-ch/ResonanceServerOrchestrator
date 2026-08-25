@@ -46,7 +46,7 @@ public sealed class ServerEndpointTests : IDisposable
         var spec = await _factory.LaunchObserved.WaitAsync(TestBudget);
 
         return new LaunchedMatch(
-            matchId, spec.Environment[GameServerLaunchSpec.MatchKeyVariable], joins);
+            matchId, spec.Environment[LocalGameServerLaunchSpec.MatchKeyVariable], joins);
     }
 
     private Task<HttpResponseMessage> SendServerRequestAsync(

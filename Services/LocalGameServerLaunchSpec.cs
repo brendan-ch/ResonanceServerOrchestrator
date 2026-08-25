@@ -1,8 +1,6 @@
 namespace ResonanceServerOrchestrator.Services;
 
-public sealed record GameServerLaunchSpec(
-    string ExecutablePath,
-    string Arguments,
+public abstract record GameServerLaunchSpec(
     IReadOnlyDictionary<string, string> Environment
 )
 {
@@ -12,4 +10,19 @@ public sealed record GameServerLaunchSpec(
     public const string OrchestratorUrlVariable = "RESONANCE_ORCHESTRATOR_URL";
     public const string NextSceneNameVariable = "RESONANCE_NEXT_SCENE_NAME";
     public const string GameModeVariable = "RESONANCE_GAME_MODE";
+};
+
+public sealed record LocalGameServerLaunchSpec(
+    string ExecutablePath,
+    string Arguments,
+    IReadOnlyDictionary<string, string> Environment
+) : GameServerLaunchSpec(Environment)
+{
+}
+
+public sealed record EdgegapGameServerLaunchSpec(
+    string ServerVersion,
+    IReadOnlyDictionary<string, string> Environment
+) : GameServerLaunchSpec(Environment)
+{
 }
