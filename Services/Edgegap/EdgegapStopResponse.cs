@@ -26,14 +26,6 @@ public sealed record EdgegapDeploymentStatus(
     IReadOnlyDictionary<string, EdgegapDeploymentPort>? Ports = null,
     EdgegapLocationData? Location = null);
 
-public sealed record EdgegapDeploymentPort(
-    string Name,
-    string Link,
-    int Internal,
-    int External,
-    string Protocol,
-    bool TlsUpgrade = false);
-
 public sealed record EdgegapLocationData(
     string City,
     string Country,
