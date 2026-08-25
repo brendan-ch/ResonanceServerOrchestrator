@@ -68,7 +68,7 @@ public sealed class InMemoryMatchStoreJoinTests
     public async Task MarkingReadyReleasesEveryWaiterWithItsOwnServerAuthToken()
     {
         var context = new MatchStoreTestContext(
-            new OrchestratorOptions { GameServerHost = "game.example", GameServerPort = 7801 });
+            new OrchestratorOptions { LocalGameServerHost = "game.example", LocalGameServerInternalAndExternalPort = 7801 });
 
         var assembled = context.AssembleRoster(MatchStoreTestContext.FirstLobby, "TestScene", SampleGameMode, SampleIntendedServerVersion, "alice",
             "bob");
@@ -87,7 +87,7 @@ public sealed class InMemoryMatchStoreJoinTests
     public void TheSnapshotCarriesTheMatchKeyThePortAndEveryMemberInCanonicalRosterOrder()
     {
         var context = new MatchStoreTestContext(
-            new OrchestratorOptions { GameServerHost = "game.example", GameServerPort = 7801 });
+            new OrchestratorOptions { LocalGameServerHost = "game.example", LocalGameServerInternalAndExternalPort = 7801 });
 
         var snapshot = context
             .AssembleRoster(MatchStoreTestContext.FirstLobby, "TestScene", SampleGameMode, SampleIntendedServerVersion, "alice", "bob").Snapshot;

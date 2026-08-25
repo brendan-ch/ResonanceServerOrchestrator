@@ -6,16 +6,22 @@ public sealed record OrchestratorOptions
 {
     public const string SectionName = "Orchestrator";
 
+    #region Launcher type
+    public LauncherType LauncherType { get; } = LauncherType.LocalProcess;
+    #endregion
+
+    #region Local process launcher
     public string UnityServerPath { get; init; } = string.Empty;
     public string UnityServerBaseArgs { get; init; } = string.Empty;
     public string OrchestratorUrl { get; init; } = string.Empty;
-    public LauncherType LauncherType { get; init; } = LauncherType.LocalProcess;
+    public string LocalGameServerHost { get; init; } = "localhost";
+    public int LocalGameServerInternalAndExternalPort { get; init; } = 7777;
+    #endregion
 
+    #region Match configuration
     public int MaxMatches { get; init; } = 1;
     public double MatchTimeoutMinutes { get; init; } = 30;
 
-    public string GameServerHost { get; init; } = "localhost";
-    public int GameServerPort { get; init; } = 7777;
 
     public double RosterAssemblyTimeoutSeconds { get; init; } = 45;
     public double ServerReadyTimeoutSeconds { get; init; } = 30;
@@ -26,8 +32,16 @@ public sealed record OrchestratorOptions
     public int MaxPlatformIdentifierLength { get; init; } = 64;
     public int MaxUsernameLength { get; init; } = 64;
     public int MaxAuthenticationTicketHexLength { get; init; } = 2048;
+    #endregion
 
+    #region Steam configuration
     public bool SteamCredentialCheckDisabled { get; init; }
     public string SteamPublisherWebApiKey { get; init; } = string.Empty;
     public uint SteamAppId { get; init; }
+    #endregion
+
+    #region Edgegap configuration
+
+    public string EdgegapApiKey { get; init; }
+    #endregion
 }

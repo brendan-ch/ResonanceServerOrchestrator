@@ -73,9 +73,9 @@ public sealed class OrchestratorOptionsValidationTests
     [InlineData(nameof(OrchestratorOptions.RosterAssemblyTimeoutSeconds), "0")]
     [InlineData(nameof(OrchestratorOptions.ServerReadyTimeoutSeconds), "-1")]
     [InlineData(nameof(OrchestratorOptions.CleanupIntervalSeconds), "0")]
-    [InlineData(nameof(OrchestratorOptions.GameServerPort), "0")]
-    [InlineData(nameof(OrchestratorOptions.GameServerPort), "70000")]
-    [InlineData(nameof(OrchestratorOptions.GameServerHost), "")]
+    [InlineData(nameof(OrchestratorOptions.LocalGameServerInternalAndExternalPort), "0")]
+    [InlineData(nameof(OrchestratorOptions.LocalGameServerInternalAndExternalPort), "70000")]
+    [InlineData(nameof(OrchestratorOptions.LocalGameServerHost), "")]
     [InlineData(nameof(OrchestratorOptions.MaxExpectedLobbyPlayers), "0")]
     public void NonsensicalValues_RefuseToStart(string propertyName, string value)
     {

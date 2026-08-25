@@ -92,7 +92,7 @@ internal sealed class InMemoryMatchStore(IOptions<OrchestratorOptions> options, 
 
             foreach (var member in started.Members.Values)
                 member.Completion.TrySetResult(new JoinSucceeded(
-                    matchId, Options.GameServerHost, Options.GameServerPort, member.ServerAuthToken));
+                    matchId, Options.LocalGameServerHost, Options.LocalGameServerInternalAndExternalPort, member.ServerAuthToken));
 
             return MarkReadyOutcome.MatchStarted;
         }
@@ -448,7 +448,7 @@ internal sealed class InMemoryMatchStore(IOptions<OrchestratorOptions> options, 
         MatchMember.Register(identity, username, MintSecret(), ++_lastIssuedMemberGeneration);
 
     private MatchSnapshot CreateSnapshot(MatchState match) =>
-        new(match.MatchId, match.MatchKey, Options.GameServerPort, match.MembersInCanonicalRosterOrder(),
+        new(match.MatchId, match.MatchKey, Options.LocalGameServerInternalAndExternalPort, match.MembersInCanonicalRosterOrder(),
             match.NextSceneName, match.GameMode);
 
     private MarkReadyOutcome DescribeAbsentMatch(Guid matchId, string presentedMatchKey)
