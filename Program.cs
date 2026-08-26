@@ -1,6 +1,8 @@
+using System.Net.Http.Headers;
 using System.Runtime.CompilerServices;
 using System.Threading.RateLimiting;
 using Asp.Versioning;
+using Microsoft.Extensions.Options;
 using ResonanceServerOrchestrator.Configuration;
 using ResonanceServerOrchestrator.Endpoints;
 using ResonanceServerOrchestrator.Serialization;
@@ -60,7 +62,23 @@ builder.WebHost.ConfigureKestrel(kestrel =>
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddSingleton<IMatchStore, InMemoryMatchStore>();
 builder.Services.AddSingleton<MatchLaunchCoordinator>();
-builder.Services.AddSingleton<IEdgegapClient, HttpEdgegapClient>();
+builder.Services.AddHttpClient("Edgegap", (sp, http) =>
+{
+    var options = sp.GetRequiredService<IOptions<OrchestratorOptions>>().Value;
+    http.BaseAddress = new Uri(options.EdgegapBaseUrl);
+    http.DefaultRequestHeaders.Authorization =
+        new AuthenticationHeaderValue("token", options.EdgegapApiKey);
+});
+builder.Services.AddSingleton<IEdgegapClient>(sp =>
+{
+    var options = sp.GetRequiredService<IOptions<OrchestratorOptions>>().Value;
+    var httpClient = sp.GetRequiredService<IHttpClientFactory>().CreateClient("Edgegap");
+    return new HttpEdgegapClient(
+        httpClient,
+        options.EdgegapApiKey,
+        options.EdgegapPollingDelayMs,
+        options.EdgegapMaxPollingAttempts);
+});
 builder.Services.AddScoped<PlayerTicketAuthenticator>();
 builder.Services.AddHostedService<MatchCleanupService>();
 
@@ -68,10 +86,27 @@ var launcherType = builder.Configuration
     .GetSection(OrchestratorOptions.SectionName)
     .GetValue<LauncherType>(nameof(OrchestratorOptions.LauncherType));
 
-if (launcherType == LauncherType.None)
-    builder.Services.AddSingleton<IGameServerLauncher, NullGameServerLauncher>();
-else
-    builder.Services.AddSingleton<IGameServerLauncher, LocalProcessGameServerLauncher>();
+switch (launcherType)
+{
+    case LauncherType.None:
+        builder.Services.AddSingleton<IGameServerLauncher, NullGameServerLauncher>();
+        break;
+    case LauncherType.Edgegap:
+        builder.Services.AddSingleton<IGameServerLauncher>(sp =>
+        {
+            var options = sp.GetRequiredService<IOptions<OrchestratorOptions>>().Value;
+            return new EdgegapGameServerLauncher(
+                sp.GetRequiredService<IEdgegapClient>(),
+                options.EdgegapPollingDelayMs,
+                options.EdgegapMaxPollingAttempts,
+                sp.GetRequiredService<ILogger<EdgegapGameServerLauncher>>());
+        });
+        break;
+    case LauncherType.LocalProcess:
+    default:
+        builder.Services.AddSingleton<IGameServerLauncher, LocalProcessGameServerLauncher>();
+        break;
+}
 
 var steamCredentialCheckDisabled = builder.Configuration
     .GetSection(OrchestratorOptions.SectionName)

@@ -415,10 +415,12 @@ public sealed class EdgegapGameServerLauncherTests : IDisposable
                 Arg.Any<CancellationToken>())
             .Returns(notReadyYetResponse, readyResponse, readyResponse);
 
-        await Assert.ThrowsAsync<GameServerLaunchException>(() => _launcher!.Launch(new EdgegapGameServerLaunchSpec(
+        var instance = await _launcher!.Launch(new EdgegapGameServerLaunchSpec(
             ServerVersion,
             new Dictionary<string, string>(),
             new List<string>()
-        )));
+        ));
+
+        await Assert.ThrowsAsync<GameInstanceException>(instance.Stop);
     }
 }

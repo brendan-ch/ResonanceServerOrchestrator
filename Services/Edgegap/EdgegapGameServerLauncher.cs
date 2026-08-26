@@ -17,32 +17,26 @@ public sealed class EdgegapGameServerLauncher(
             throw new GameServerLaunchException("Invalid launch spec");
         }
 
+        var users = edgegapSpec.UserIpAddresses.Select(ip => new EdgegapUser(
+            UserType: "ip_address",
+            UserData: new Dictionary<string, object>()
+            {
+                { "ip_address", ip }
+            }
+        )).ToList();
+
+        var environmentVariables = edgegapSpec.Environment.Select(envVar => new EdgegapEnvironmentVariable(
+            Key: envVar.Key,
+            Value: envVar.Value,
+            IsHidden: false
+        )).ToList();
+
         var deploymentRequest = new EdgegapDeploymentRequest(
             "Resonance",
             edgegapSpec.ServerVersion,
-            new List<EdgegapUser>(),
-            EnvironmentVariables: new List<EdgegapEnvironmentVariable>()
+            users,
+            EnvironmentVariables: environmentVariables
         );
-
-        foreach (var ip in edgegapSpec.UserIpAddresses)
-        {
-            _ = deploymentRequest.Users.Append(new EdgegapUser(
-                UserType: "ip_address",
-                UserData: new Dictionary<string, object>()
-                {
-                    { "ip_address", ip }
-                }
-            ));
-        }
-
-        foreach (var envVar in edgegapSpec.Environment)
-        {
-            _ = deploymentRequest.EnvironmentVariables?.Append(new EdgegapEnvironmentVariable(
-                Key: envVar.Key,
-                Value: envVar.Value,
-                IsHidden: false
-            ));
-        }
 
         try
         {
@@ -78,9 +72,7 @@ public sealed class EdgegapGameServerLauncher(
         }
         catch (Exception e)
         {
-            // don't expose errors to calling client, do log for visibility
-            logger.LogError(e, "Failed to deploy game server");
-            throw new GameServerLaunchException("Failed to deploy game server");
+            throw new GameServerLaunchException("Failed to deploy game server", e);
         }
     }
 }

@@ -2,6 +2,13 @@ using System.Text.Json;
 
 namespace ResonanceServerOrchestrator.Services.Edgegap;
 
+/// <summary>
+/// A thin client for the Edgegap API.
+/// </summary>
+/// <param name="httpClient"></param>
+/// <param name="token"></param>
+/// <param name="pollingDelay"></param>
+/// <param name="pollingAttempts"></param>
 public sealed class HttpEdgegapClient(HttpClient httpClient, string token, int pollingDelay, int pollingAttempts)
     : IEdgegapClient
 {
@@ -18,6 +25,8 @@ public sealed class HttpEdgegapClient(HttpClient httpClient, string token, int p
 
     public Task<EdgegapDeploymentResponse> DeployAsync(EdgegapDeploymentRequest request, CancellationToken token)
     {
+        if (_httpClient.BaseAddress == null) throw new EdgegapClientException();
+
         throw new NotImplementedException();
     }
 
@@ -30,4 +39,8 @@ public sealed class HttpEdgegapClient(HttpClient httpClient, string token, int p
     {
         throw new NotImplementedException();
     }
+}
+
+public class EdgegapClientException : Exception
+{
 }

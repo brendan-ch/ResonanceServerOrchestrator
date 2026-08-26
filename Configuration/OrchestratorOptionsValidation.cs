@@ -44,6 +44,13 @@ public static class OrchestratorOptionsValidation
                 "receives 404 instead of 410 and never self-terminates.")
             .Validate(options => !string.IsNullOrWhiteSpace(options.LocalGameServerHost),
                 $"{Key(nameof(OrchestratorOptions.LocalGameServerHost))} must not be empty.")
+            .Validate(EdgegapApiKeyIsPresentWhenLaunchingViaEdgegap,
+                $"{Key(nameof(OrchestratorOptions.EdgegapApiKey))} must not be empty when " +
+                $"{Key(nameof(OrchestratorOptions.LauncherType))} is {nameof(LauncherType.Edgegap)}.")
+            .Validate(options => options.EdgegapPollingDelayMs > 0,
+                $"{Key(nameof(OrchestratorOptions.EdgegapPollingDelayMs))} must be positive.")
+            .Validate(options => options.EdgegapMaxPollingAttempts > 0,
+                $"{Key(nameof(OrchestratorOptions.EdgegapMaxPollingAttempts))} must be positive.")
             .ValidateOnStart();
 
     private static bool SteamCredentialsArePresentWhenTheCheckIsEnabled(OrchestratorOptions options) =>
@@ -55,6 +62,9 @@ public static class OrchestratorOptionsValidation
 
     private static bool LocalProcessHostsExactlyOneMatch(OrchestratorOptions options) =>
         options.LauncherType != LauncherType.LocalProcess || options.MaxMatches == 1;
+
+    private static bool EdgegapApiKeyIsPresentWhenLaunchingViaEdgegap(OrchestratorOptions options) =>
+        options.LauncherType != LauncherType.Edgegap || !string.IsNullOrWhiteSpace(options.EdgegapApiKey);
 
     private static bool TombstonesOutliveTheServerReadyDeadline(OrchestratorOptions options) =>
         options.TombstoneRetentionMinutes * 60 > options.ServerReadyTimeoutSeconds;

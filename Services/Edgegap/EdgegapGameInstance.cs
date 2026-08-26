@@ -5,10 +5,19 @@ public class EdgegapGameInstance(IEdgegapClient client, string deploymentId) : I
     private IEdgegapClient _client = client;
     private string _deploymentId = deploymentId;
 
-    public bool HasExited { get; private set; } = false;
-    public Task Stop()
+    public bool HasExited { get; private set; }
+    public async Task Stop()
     {
-        throw new NotImplementedException();
+        try
+        {
+            _ = await _client.StopAsync(new EdgegapStopRequest(_deploymentId), CancellationToken.None);
+        }
+        catch (Exception e)
+        {
+            throw new GameInstanceException("Failed to stop the game instance", e);
+        }
+
+        HasExited = true;
     }
 
     public event EventHandler? Exited;
