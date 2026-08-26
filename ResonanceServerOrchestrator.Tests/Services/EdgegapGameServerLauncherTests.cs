@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
 using NSubstitute.ExceptionExtensions;
 using ResonanceServerOrchestrator.Services;
@@ -12,9 +13,17 @@ public sealed class EdgegapGameServerLauncherTests : IDisposable
     private readonly IEdgegapClient _edgegapClient = Substitute.For<IEdgegapClient>();
     private EdgegapGameServerLauncher? _launcher;
 
-    private void SetupEdgegapLauncherWithMockEdgegapClient()
+    private void SetupEdgegapLauncherWithMockEdgegapClient(
+        int pollingDelayMs = 0,
+        int maxPollingAttempts = 5
+    )
     {
-        _launcher = new EdgegapGameServerLauncher(_edgegapClient);
+        _launcher = new EdgegapGameServerLauncher(
+            _edgegapClient,
+            pollingDelayMs,
+            maxPollingAttempts,
+            new NullLogger<EdgegapGameServerLauncher>()
+        );
     }
 
     public void Dispose()
@@ -27,20 +36,40 @@ public sealed class EdgegapGameServerLauncherTests : IDisposable
     public async Task Launch_CallsEdgegapPostDeploymentWithIntendedServerVersion()
     {
         SetupEdgegapLauncherWithMockEdgegapClient();
-        var response = new EdgegapDeploymentResponse(
+        var edgegapDeploymentResponse = new EdgegapDeploymentResponse(
             RequestId: Guid.NewGuid().ToString(),
             Message: "Hello world"
         );
         _edgegapClient.DeployAsync(Arg.Is<EdgegapDeploymentRequest>(r => r.Version == ServerVersion),
                 Arg.Any<CancellationToken>())
-            .Returns(response);
+            .Returns(edgegapDeploymentResponse);
 
-        _edgegapClient.MaxPollingAttempts.Returns(5);
-        _edgegapClient.PollingDelayMs.Returns(0);
+        var notReadyYetResponse = new EdgegapGetResponse(
+            RequestId: edgegapDeploymentResponse.RequestId!,
+            Fqdn: "c0653765de3b.pr.edgegap.net",
+            PublicIp: "192.53.120.48",
+            AppName: "test",
+            AppVersion: ServerVersion,
+            CurrentStatus: EdgegapGetResponse.StatusSeeking,
+            Running: true,
+            StartTime: "2026-04-22 12:00:46.444265",
+            ElapsedTime: 1,
+            MaxDuration: 1440
+        );
+        var readyResponse = notReadyYetResponse with
+        {
+            CurrentStatus = EdgegapGetResponse.StatusReady,
+            LastStatus = EdgegapGetResponse.StatusSeeking
+        };
+
+        _edgegapClient.GetAsync(Arg.Is<EdgegapGetRequest>(r => r.DeploymentId == edgegapDeploymentResponse.RequestId),
+                Arg.Any<CancellationToken>())
+            .Returns(notReadyYetResponse, notReadyYetResponse, notReadyYetResponse, readyResponse);
 
         await _launcher!.Launch(new EdgegapGameServerLaunchSpec(
             ServerVersion,
-            new Dictionary<string, string>()
+            new Dictionary<string, string>(),
+            new List<string>()
         ));
 
         await _edgegapClient.Received(1).DeployAsync(Arg.Is<EdgegapDeploymentRequest>(r => r.Version == ServerVersion),
@@ -59,8 +88,6 @@ public sealed class EdgegapGameServerLauncherTests : IDisposable
         _edgegapClient.DeployAsync(Arg.Is<EdgegapDeploymentRequest>(r => r.Version == ServerVersion),
                 Arg.Any<CancellationToken>())
             .Returns(edgegapDeploymentResponse);
-        _edgegapClient.MaxPollingAttempts.Returns(5);
-        _edgegapClient.PollingDelayMs.Returns(0);
 
         var serverStatusRequest = new EdgegapGetRequest(
             DeploymentId: edgegapDeploymentResponse.RequestId!
@@ -89,7 +116,8 @@ public sealed class EdgegapGameServerLauncherTests : IDisposable
 
         await _launcher!.Launch(new EdgegapGameServerLaunchSpec(
             ServerVersion,
-            new Dictionary<string, string>()
+            new Dictionary<string, string>(),
+            new List<string>()
         ));
 
         await _edgegapClient.Received(4).GetAsync(
@@ -109,9 +137,6 @@ public sealed class EdgegapGameServerLauncherTests : IDisposable
         _edgegapClient.DeployAsync(Arg.Is<EdgegapDeploymentRequest>(r => r.Version == ServerVersion),
                 Arg.Any<CancellationToken>())
             .Returns(edgegapDeploymentResponse);
-
-        _edgegapClient.MaxPollingAttempts.Returns(5);
-        _edgegapClient.PollingDelayMs.Returns(0);
 
         var serverStatusRequest = new EdgegapGetRequest(
             DeploymentId: edgegapDeploymentResponse.RequestId!
@@ -138,7 +163,8 @@ public sealed class EdgegapGameServerLauncherTests : IDisposable
         {
             await _launcher!.Launch(new EdgegapGameServerLaunchSpec(
                 ServerVersion,
-                new Dictionary<string, string>()
+                new Dictionary<string, string>(),
+                new List<string>()
             ));
         });
 
@@ -159,9 +185,6 @@ public sealed class EdgegapGameServerLauncherTests : IDisposable
         _edgegapClient.DeployAsync(Arg.Is<EdgegapDeploymentRequest>(r => r.Version == ServerVersion),
                 Arg.Any<CancellationToken>())
             .Returns(edgegapDeploymentResponse);
-
-        _edgegapClient.MaxPollingAttempts.Returns(5);
-        _edgegapClient.PollingDelayMs.Returns(0);
 
         var notReadyYetResponse = new EdgegapGetResponse(
             RequestId: edgegapDeploymentResponse.RequestId!,
@@ -193,7 +216,8 @@ public sealed class EdgegapGameServerLauncherTests : IDisposable
 
         await _launcher!.Launch(new EdgegapGameServerLaunchSpec(
             ServerVersion,
-            environment
+            environment,
+            new List<string>()
         ));
 
         await _edgegapClient.Received(1).DeployAsync(
@@ -214,7 +238,8 @@ public sealed class EdgegapGameServerLauncherTests : IDisposable
 
         await Assert.ThrowsAsync<GameServerLaunchException>(() => _launcher!.Launch(new EdgegapGameServerLaunchSpec(
             ServerVersion,
-            new Dictionary<string, string>()
+            new Dictionary<string, string>(),
+            new List<string>()
         )));
     }
 
@@ -236,7 +261,8 @@ public sealed class EdgegapGameServerLauncherTests : IDisposable
 
         await Assert.ThrowsAsync<GameServerLaunchException>(() => _launcher!.Launch(new EdgegapGameServerLaunchSpec(
             ServerVersion,
-            new Dictionary<string, string>()
+            new Dictionary<string, string>(),
+            new List<string>()
         )));
     }
 
@@ -284,7 +310,8 @@ public sealed class EdgegapGameServerLauncherTests : IDisposable
         // first run, then stop
         var instance = await _launcher!.Launch(new EdgegapGameServerLaunchSpec(
             ServerVersion,
-            new Dictionary<string, string>()
+            new Dictionary<string, string>(),
+            new List<string>()
         ));
         Assert.NotNull(instance);
 
@@ -339,7 +366,8 @@ public sealed class EdgegapGameServerLauncherTests : IDisposable
         // first run, then stop
         var instance = await _launcher!.Launch(new EdgegapGameServerLaunchSpec(
             ServerVersion,
-            new Dictionary<string, string>()
+            new Dictionary<string, string>(),
+            new List<string>()
         ));
         Assert.NotNull(instance);
 
@@ -389,7 +417,8 @@ public sealed class EdgegapGameServerLauncherTests : IDisposable
 
         await Assert.ThrowsAsync<GameServerLaunchException>(() => _launcher!.Launch(new EdgegapGameServerLaunchSpec(
             ServerVersion,
-            new Dictionary<string, string>()
+            new Dictionary<string, string>(),
+            new List<string>()
         )));
     }
 }

@@ -1,8 +1,9 @@
 namespace ResonanceServerOrchestrator.Services.Edgegap;
 
-public class EdgegapGameInstance(HttpEdgegapClient client) : IGameInstance
+public class EdgegapGameInstance(IEdgegapClient client, string deploymentId) : IGameInstance
 {
-    private HttpEdgegapClient _client = client;
+    private IEdgegapClient _client = client;
+    private string _deploymentId = deploymentId;
 
     public bool HasExited { get; private set; } = false;
     public Task Stop()

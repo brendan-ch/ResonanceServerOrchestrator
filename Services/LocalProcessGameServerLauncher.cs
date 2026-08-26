@@ -7,7 +7,7 @@ public sealed class LocalProcessGameServerLauncher : IGameServerLauncher
 {
     public bool ReportsReadiness => true;
 
-    public Task<IGameInstance> Launch(GameServerLaunchSpec genericSpec)
+    public Task<IGameInstance> Launch(GameServerLaunchSpec genericSpec, CancellationToken token = default)
     {
         try
         {

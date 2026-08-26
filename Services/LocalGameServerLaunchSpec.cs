@@ -22,7 +22,7 @@ public sealed record LocalGameServerLaunchSpec(
 
 public sealed record EdgegapGameServerLaunchSpec(
     string ServerVersion,
-    IReadOnlyDictionary<string, string> Environment
-) : GameServerLaunchSpec(Environment)
+    IReadOnlyDictionary<string, string> Environment,
+    IReadOnlyList<string> UserIpAddresses) : GameServerLaunchSpec(Environment)
 {
 }

@@ -5,6 +5,7 @@ using ResonanceServerOrchestrator.Configuration;
 using ResonanceServerOrchestrator.Endpoints;
 using ResonanceServerOrchestrator.Serialization;
 using ResonanceServerOrchestrator.Services;
+using ResonanceServerOrchestrator.Services.Edgegap;
 using ResonanceServerOrchestrator.Stores;
 
 [assembly: InternalsVisibleTo("ResonanceServerOrchestrator.Tests")]
@@ -59,6 +60,7 @@ builder.WebHost.ConfigureKestrel(kestrel =>
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddSingleton<IMatchStore, InMemoryMatchStore>();
 builder.Services.AddSingleton<MatchLaunchCoordinator>();
+builder.Services.AddSingleton<IEdgegapClient, HttpEdgegapClient>();
 builder.Services.AddScoped<PlayerTicketAuthenticator>();
 builder.Services.AddHostedService<MatchCleanupService>();
 
