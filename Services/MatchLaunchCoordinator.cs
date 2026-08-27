@@ -35,7 +35,7 @@ internal sealed class MatchLaunchCoordinator(
 
         if (!store.TrySetInstance(snapshot.MatchId, instance))
         {
-            instance.Stop();
+            await instance.Stop();
             return;
         }
 
@@ -58,7 +58,8 @@ internal sealed class MatchLaunchCoordinator(
                 [GameServerLaunchSpec.MatchKeyVariable] = snapshot.MatchKey,
                 [GameServerLaunchSpec.OrchestratorUrlVariable] = configuration.OrchestratorUrl,
                 [GameServerLaunchSpec.NextSceneNameVariable] = snapshot.NextSceneName,
-                [GameServerLaunchSpec.GameModeVariable] = snapshot.GameMode
+                [GameServerLaunchSpec.GameModeVariable] = snapshot.GameMode,
+                [GameServerLaunchSpec.IntendedServerVersionVariable] = snapshot.IntendedServerVersion
             });
     }
 
@@ -66,7 +67,7 @@ internal sealed class MatchLaunchCoordinator(
     {
         var configuration = options.Value;
 
-        return new EdgegapGameServerLaunchSpec(
+        var spec = new EdgegapGameServerLaunchSpec(
             snapshot.IntendedServerVersion,
             new Dictionary<string, string>()
             {
@@ -74,9 +75,16 @@ internal sealed class MatchLaunchCoordinator(
                 [GameServerLaunchSpec.MatchKeyVariable] = snapshot.MatchKey,
                 [GameServerLaunchSpec.OrchestratorUrlVariable] = configuration.OrchestratorUrl,
                 [GameServerLaunchSpec.NextSceneNameVariable] = snapshot.NextSceneName,
-                [GameServerLaunchSpec.GameModeVariable] = snapshot.GameMode
+                [GameServerLaunchSpec.GameModeVariable] = snapshot.GameMode,
+                [GameServerLaunchSpec.IntendedServerVersionVariable] = snapshot.IntendedServerVersion
             },
-            null
+            new List<string>()
         );
+        foreach (var member in snapshot.Members)
+        {
+            _ = spec.UserIpAddresses.Append(member.IpAddress);
+        }
+
+        return spec;
     }
 }

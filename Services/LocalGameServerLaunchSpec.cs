@@ -10,6 +10,11 @@ public abstract record GameServerLaunchSpec(
     public const string OrchestratorUrlVariable = "RESONANCE_ORCHESTRATOR_URL";
     public const string NextSceneNameVariable = "RESONANCE_NEXT_SCENE_NAME";
     public const string GameModeVariable = "RESONANCE_GAME_MODE";
+
+    /// <summary>
+    /// The game server may validate the passed value against the internally stored version.
+    /// </summary>
+    public const string IntendedServerVersionVariable = "RESONANCE_INTENDED_SERVER_VERSION";
 };
 
 public sealed record LocalGameServerLaunchSpec(
