@@ -1,6 +1,6 @@
 {
   "name": "dev.bchen.resonance.contracts",
-  "version": "1.0.0",
+  "version": "1.0.4",
   "displayName": "Resonance Contracts",
   "description": "Wire types shared with the Resonance server orchestrator.",
   "unity": "6000.2"
