@@ -1,4 +1,6 @@
+using System.Net.Http.Headers;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace ResonanceServerOrchestrator.Services.Edgegap;
 
@@ -7,40 +9,77 @@ namespace ResonanceServerOrchestrator.Services.Edgegap;
 /// </summary>
 /// <param name="httpClient"></param>
 /// <param name="token"></param>
-/// <param name="pollingDelay"></param>
-/// <param name="pollingAttempts"></param>
-public sealed class HttpEdgegapClient(HttpClient httpClient, string token, int pollingDelay, int pollingAttempts)
+public sealed class HttpEdgegapClient(HttpClient httpClient, string token)
     : IEdgegapClient
 {
     private static readonly JsonSerializerOptions JsonSerializerOptions = new()
     {
-        // All Edgegap objects use this policy
         PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower,
+        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
     };
 
-    private readonly HttpClient _httpClient = httpClient;
-    private string _token = token;
-    public int PollingDelayMs { get; } = pollingDelay;
-    public int MaxPollingAttempts { get; } = pollingAttempts;
-
-    public Task<EdgegapDeploymentResponse> DeployAsync(EdgegapDeploymentRequest request, CancellationToken token)
+    public Task<EdgegapDeploymentResponse> DeployAsync(EdgegapDeploymentRequest request, CancellationToken ct)
     {
-        if (_httpClient.BaseAddress == null) throw new EdgegapClientException();
-
-        throw new NotImplementedException();
+        return httpClient.BaseAddress == null
+            ? throw new EdgegapClientException("Base URL not configured")
+            : SendAsync<EdgegapDeploymentResponse>(HttpMethod.Post, "v2/deployments", request, ct);
     }
 
-    public Task<EdgegapStopResponse> StopAsync(EdgegapStopRequest request, CancellationToken token)
+    public Task<EdgegapStopResponse> StopAsync(EdgegapStopRequest request, CancellationToken ct)
     {
-        throw new NotImplementedException();
+        return httpClient.BaseAddress == null
+            ? throw new EdgegapClientException("Base URL not configured")
+            : SendAsync<EdgegapStopResponse>(HttpMethod.Delete, $"v1/stop/{request.DeploymentId}", null, ct);
     }
 
-    public Task<EdgegapGetResponse> GetAsync(EdgegapGetRequest request, CancellationToken token)
+    public Task<EdgegapGetResponse> GetAsync(EdgegapGetRequest request, CancellationToken ct)
     {
-        throw new NotImplementedException();
+        return httpClient.BaseAddress == null
+            ? throw new EdgegapClientException("Base URL not configured")
+            : SendAsync<EdgegapGetResponse>(HttpMethod.Get, $"v1/status/{request.DeploymentId}", null, ct);
+    }
+
+    private async Task<TResponse> SendAsync<TResponse>(HttpMethod method, string path, object? body,
+        CancellationToken ct)
+    {
+        var requestMessage = new HttpRequestMessage(method, path)
+        {
+            Headers =
+            {
+                { "Authorization", $"token {token}" },
+                { "Accept", "application/json" }
+            }
+        };
+
+        if (body != null)
+        {
+            var requestBody = JsonSerializer.SerializeToUtf8Bytes(body, body.GetType(), JsonSerializerOptions);
+            requestMessage.Content = new ByteArrayContent(requestBody);
+            requestMessage.Content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
+        }
+
+        using var response = await httpClient.SendAsync(requestMessage, ct);
+
+        if (!response.IsSuccessStatusCode)
+        {
+            var errorBody = await response.Content.ReadAsStringAsync(ct);
+            throw new EdgegapClientException(
+                $"HTTP {(int)response.StatusCode}: {errorBody}",
+                (int)response.StatusCode);
+        }
+
+        var result = await response.Content.ReadFromJsonAsync<TResponse>(JsonSerializerOptions, ct);
+        return result ?? throw new EdgegapClientException("Empty response body");
     }
 }
 
 public class EdgegapClientException : Exception
 {
+    public int StatusCode { get; }
+
+    public EdgegapClientException(string message) : base(message)
+    {
+    }
+
+    public EdgegapClientException(string message, int statusCode) : base(message) => StatusCode = statusCode;
 }

@@ -75,9 +75,8 @@ builder.Services.AddSingleton<IEdgegapClient>(sp =>
     var httpClient = sp.GetRequiredService<IHttpClientFactory>().CreateClient("Edgegap");
     return new HttpEdgegapClient(
         httpClient,
-        options.EdgegapApiKey,
-        options.EdgegapPollingDelayMs,
-        options.EdgegapMaxPollingAttempts);
+        options.EdgegapApiKey
+    );
 });
 builder.Services.AddScoped<PlayerTicketAuthenticator>();
 builder.Services.AddHostedService<MatchCleanupService>();
@@ -142,4 +141,6 @@ app.MapServerEndpoints(versionSet);
 
 app.Run();
 
-public partial class Program { }
+public partial class Program
+{
+}
