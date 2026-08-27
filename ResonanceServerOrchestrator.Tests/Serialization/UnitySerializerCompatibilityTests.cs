@@ -70,7 +70,7 @@ public sealed class UnitySerializerCompatibilityTests
     public void MatchMember_WrittenByTheOrchestrator_IsReadableByUnity()
     {
         var written = OrchestratorWrites(
-            new MatchMemberDto(Platform.Steam, "76561198000000001", "ana", "token-abc"));
+            new MatchMemberDto(Platform.Steam, "76561198000000001", "ana", "token-abc", "203.0.113.10"));
 
         var read = UnityReads<MatchMemberDto>(written);
 
@@ -78,6 +78,7 @@ public sealed class UnitySerializerCompatibilityTests
         Assert.Equal("76561198000000001", read.PlatformUserId);
         Assert.Equal("ana", read.Username);
         Assert.Equal("token-abc", read.ServerAuthToken);
+        Assert.Equal("203.0.113.10", read.IpAddress);
     }
 
     [Theory]

@@ -27,6 +27,7 @@ public static class MatchEndpoints
     }
 
     private static async Task<IResult> HandleJoinMatch(
+        HttpContext httpContext,
         JoinMatchDto? request,
         IMatchStore store,
         PlayerTicketAuthenticator authenticator,
@@ -35,6 +36,12 @@ public static class MatchEndpoints
         CancellationToken cancellationToken
     )
     {
+        var ip = httpContext.Connection.RemoteIpAddress;
+        if (ip is null)
+        {
+            return Results.Problem(detail: "No IP address associated with request", statusCode: StatusCodes.Status400BadRequest);
+        }
+
         if (!JoinMatchRequestValidator.TryValidate(
                 request, options.Value, out var joiningPlayer, out var problem))
             return Results.Problem(detail: problem, statusCode: StatusCodes.Status400BadRequest);
@@ -56,8 +63,12 @@ public static class MatchEndpoints
             lobby,
             user.GetIdentity(),
             joiningPlayer.Username,
+            ip,
             request.ExpectedLobbyPlayers.Select(player => player.GetIdentity()).ToList(),
-            request.NextSceneName, request.GameMode, request.IntendedServerVersion);
+            request.NextSceneName,
+            request.GameMode,
+            request.IntendedServerVersion
+        );
 
         return outcome switch
         {
@@ -80,7 +91,8 @@ public static class MatchEndpoints
         IMatchStore store,
         MatchLaunchCoordinator launchCoordinator,
         PlayerIdentity identity,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken
+    )
     {
         await launchCoordinator.LaunchGameServerFor(rosterComplete.Snapshot);
 

@@ -7,8 +7,6 @@ public sealed class EdgegapGameServerLauncher(
     ILogger<EdgegapGameServerLauncher> logger) : IGameServerLauncher
 {
     public bool ReportsReadiness => true;
-    private int _pollingDelayMs = pollingDelayMs;
-    private int _maxPollingAttempts = maxPollingAttempts;
 
     public async Task<IGameInstance> Launch(GameServerLaunchSpec spec, CancellationToken token = default)
     {
@@ -49,10 +47,10 @@ public sealed class EdgegapGameServerLauncher(
 
             EdgegapGetResponse? readyResponse = null;
             var numPollingAttempts = 0;
-            while (readyResponse == null && numPollingAttempts < _maxPollingAttempts)
+            while (readyResponse == null && numPollingAttempts < maxPollingAttempts)
             {
                 var getResponse = await client.GetAsync(new EdgegapGetRequest(requestId), token);
-                await Task.Delay(_pollingDelayMs, token);
+                await Task.Delay(pollingDelayMs, token);
                 if (getResponse.CurrentStatus == EdgegapGetResponse.StatusReady)
                 {
                     readyResponse = getResponse;
@@ -61,7 +59,7 @@ public sealed class EdgegapGameServerLauncher(
                 numPollingAttempts++;
             }
 
-            if (numPollingAttempts >= _maxPollingAttempts)
+            if (numPollingAttempts >= maxPollingAttempts)
             {
                 throw new TimeoutException("Unable to obtain ready status in specified number of polling attempts");
             }

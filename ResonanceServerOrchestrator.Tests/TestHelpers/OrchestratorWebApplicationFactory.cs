@@ -1,3 +1,5 @@
+using System.Net;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.Configuration;
@@ -68,7 +70,21 @@ internal sealed class OrchestratorWebApplicationFactory : WebApplicationFactory<
             services.AddSingleton(LauncherSubstitute);
             services.RemoveAll<ISteamTicketValidator>();
             services.AddSingleton(TicketValidatorSubstitute);
+            services.AddTransient<IStartupFilter, FakeRemoteIpAddressStartupFilter>();
         });
+    }
+
+    private sealed class FakeRemoteIpAddressStartupFilter : IStartupFilter
+    {
+        public Action<IApplicationBuilder> Configure(Action<IApplicationBuilder> next) => app =>
+        {
+            app.Use((context, nextMiddleware) =>
+            {
+                context.Connection.RemoteIpAddress ??= IPAddress.Loopback;
+                return nextMiddleware();
+            });
+            next(app);
+        };
     }
 
     private static Dictionary<string, string?> DefaultConfiguration() => new()

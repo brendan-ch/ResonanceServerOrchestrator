@@ -1,3 +1,4 @@
+using System.Net;
 using Resonance.Contracts;
 using ResonanceServerOrchestrator.Stores;
 using Xunit;
@@ -107,6 +108,26 @@ public sealed class InMemoryMatchStoreRosterTests
             .FindMatch(MatchStoreTestContext.MatchIdOf(firstAttempt))!
             .Members[MatchStoreTestContext.Player("alice")].ServerAuthToken;
         Assert.NotEqual(originalToken, replacedToken);
+    }
+
+    [Fact]
+    public void ARepeatJoinInAPendingMatchUpdatesTheStoredIpAddress()
+    {
+        var context = new MatchStoreTestContext();
+        var roster = MatchStoreTestContext.Roster("alice", "bob");
+        var originalIp = IPAddress.Parse("198.51.100.1");
+        var reconnectIp = IPAddress.Parse("198.51.100.2");
+
+        var firstAttempt = context.Join(MatchStoreTestContext.FirstLobby, "alice", roster, SampleNextSceneName,
+            SampleGameMode, SampleIntendedServerVersion, originalIp);
+
+        context.Join(MatchStoreTestContext.FirstLobby, "alice", roster, SampleNextSceneName, SampleGameMode,
+            SampleIntendedServerVersion, reconnectIp);
+
+        var storedIp = context.Store
+            .FindMatch(MatchStoreTestContext.MatchIdOf(firstAttempt))!
+            .Members[MatchStoreTestContext.Player("alice")].IpAddress;
+        Assert.Equal(reconnectIp.ToString(), storedIp);
     }
 
     [Fact]

@@ -1,3 +1,4 @@
+using System.Net;
 using Resonance.Contracts;
 using ResonanceServerOrchestrator.Services;
 
@@ -8,6 +9,7 @@ internal interface IMatchStore
     JoinOutcome TryJoin(LobbyKey lobby,
         PlayerIdentity identity,
         string username,
+        IPAddress ipAddress,
         IReadOnlyList<PlayerIdentity> expectedRoster,
         string expectedNextSceneName,
         string expectedGameMode,

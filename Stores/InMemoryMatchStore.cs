@@ -1,6 +1,7 @@
 using System.Buffers.Text;
 using System.Collections.Concurrent;
 using System.Collections.Immutable;
+using System.Net;
 using System.Security.Cryptography;
 using System.Text;
 using Microsoft.Extensions.Options;
@@ -31,6 +32,7 @@ internal sealed class InMemoryMatchStore(IOptions<OrchestratorOptions> options, 
     public JoinOutcome TryJoin(LobbyKey lobby,
         PlayerIdentity identity,
         string username,
+        IPAddress ipAddress,
         IReadOnlyList<PlayerIdentity> expectedRoster,
         string expectedNextSceneName,
         string expectedGameMode,
@@ -43,10 +45,10 @@ internal sealed class InMemoryMatchStore(IOptions<OrchestratorOptions> options, 
                 return multiLobbyRejection;
 
             return TryFindMatchInLobby(lobby) is { } existingMatch
-                ? JoinExistingMatch(existingMatch, identity, username, expectedRoster, expectedNextSceneName,
-                    expectedGameMode, expectedIntendedServerVersion)
-                : CreateMatch(lobby, identity, username, expectedRoster, expectedNextSceneName, expectedGameMode,
-                    expectedIntendedServerVersion);
+                ? JoinExistingMatch(existingMatch, identity, username, ipAddress, expectedRoster,
+                    expectedNextSceneName, expectedGameMode, expectedIntendedServerVersion)
+                : CreateMatch(lobby, identity, username, ipAddress, expectedRoster, expectedNextSceneName,
+                    expectedGameMode, expectedIntendedServerVersion);
         }
     }
 
@@ -253,6 +255,7 @@ internal sealed class InMemoryMatchStore(IOptions<OrchestratorOptions> options, 
     private JoinOutcome JoinExistingMatch(MatchState match,
         PlayerIdentity identity,
         string username,
+        IPAddress ipAddress,
         IReadOnlyList<PlayerIdentity> expectedRoster,
         string expectedNextSceneName,
         string expectedGameMode,
@@ -279,14 +282,14 @@ internal sealed class InMemoryMatchStore(IOptions<OrchestratorOptions> options, 
         }
 
         return match.Members.ContainsKey(identity)
-            ? ReplaceMember(match, identity, username)
-            : AddMember(match, identity, username);
+            ? ReplaceMember(match, identity, username, ipAddress)
+            : AddMember(match, identity, username, ipAddress);
     }
 
-    private JoinOutcome ReplaceMember(MatchState match, PlayerIdentity identity, string username)
+    private JoinOutcome ReplaceMember(MatchState match, PlayerIdentity identity, string username, IPAddress ipAddress)
     {
         var supersededMember = match.Members[identity];
-        var replacement = RegisterMember(identity, username);
+        var replacement = RegisterMember(identity, username, ipAddress);
         var updated = match.WithMember(replacement);
 
         _matchesById[match.MatchId] = updated;
@@ -298,9 +301,9 @@ internal sealed class InMemoryMatchStore(IOptions<OrchestratorOptions> options, 
         return new MemberAdded(match.MatchId, replacement.MemberGeneration, replacement.Completion.Task);
     }
 
-    private JoinOutcome AddMember(MatchState match, PlayerIdentity identity, string username)
+    private JoinOutcome AddMember(MatchState match, PlayerIdentity identity, string username, IPAddress ipAddress)
     {
-        var member = RegisterMember(identity, username);
+        var member = RegisterMember(identity, username, ipAddress);
         var updated = match.WithMember(member);
         _matchIdByPlayer[identity] = match.MatchId;
         return PublishJoinedMatch(updated, member);
@@ -309,6 +312,7 @@ internal sealed class InMemoryMatchStore(IOptions<OrchestratorOptions> options, 
     private JoinOutcome CreateMatch(LobbyKey lobby,
         PlayerIdentity identity,
         string username,
+        IPAddress ipAddress,
         IReadOnlyList<PlayerIdentity> expectedRoster,
         string expectedNextSceneName,
         string expectedGameMode,
@@ -318,14 +322,14 @@ internal sealed class InMemoryMatchStore(IOptions<OrchestratorOptions> options, 
             return new Rejected(JoinFailureReason.CapacityReached, 0, 0);
 
         var matchId = Guid.NewGuid();
-        var firstMember = RegisterMember(identity, username);
+        var firstMember = RegisterMember(identity, username, ipAddress);
         var match = new MatchState
         {
             MatchId = matchId,
             Lobby = lobby,
             Status = MatchStatus.Pending,
             MatchKey = MintSecret(),
-            CanonicalRoster = expectedRoster.ToImmutableArray(),
+            CanonicalRoster = [..expectedRoster],
             CreatedAt = timeProvider.GetUtcNow(),
             Members = ImmutableDictionary<PlayerIdentity, MatchMember>.Empty.Add(identity, firstMember),
             NextSceneName = expectedNextSceneName,
@@ -444,8 +448,8 @@ internal sealed class InMemoryMatchStore(IOptions<OrchestratorOptions> options, 
     private MatchDeadlineTimers? DeadlineTimersFor(Guid matchId) =>
         _deadlineTimersByMatchId.GetValueOrDefault(matchId);
 
-    private MatchMember RegisterMember(PlayerIdentity identity, string username) =>
-        MatchMember.Register(identity, username, MintSecret(), ++_lastIssuedMemberGeneration);
+    private MatchMember RegisterMember(PlayerIdentity identity, string username, IPAddress ipAddress) =>
+        MatchMember.Register(identity, username, MintSecret(), ipAddress.ToString(), ++_lastIssuedMemberGeneration);
 
     private MatchSnapshot CreateSnapshot(MatchState match) =>
         new(match.MatchId, match.MatchKey, Options.LocalGameServerInternalAndExternalPort, match.MembersInCanonicalRosterOrder(),

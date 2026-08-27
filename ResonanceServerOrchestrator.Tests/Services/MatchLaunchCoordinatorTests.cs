@@ -21,7 +21,7 @@ public sealed class MatchLaunchCoordinatorTests
         Guid.NewGuid(),
         MatchKey,
         7777,
-        [new MatchMemberDto(Platform.Steam, "76561198000000001", "alice", "token")],
+        [new MatchMemberDto(Platform.Steam, "76561198000000001", "alice", "token", "203.0.113.10")],
         "TestScene",
         "Arena",
         "IntendedServerVersion");
