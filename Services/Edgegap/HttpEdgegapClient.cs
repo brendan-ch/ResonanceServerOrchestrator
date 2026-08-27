@@ -46,6 +46,7 @@ public sealed class HttpEdgegapClient(HttpClient httpClient, string token)
         {
             Headers =
             {
+                // Edgegap tokens are of format `token <TOKEN>`, *not* `Bearer <TOKEN>`
                 { "Authorization", $"token {token}" },
                 { "Accept", "application/json" }
             }

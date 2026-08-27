@@ -7,7 +7,7 @@ public sealed record OrchestratorOptions
     public const string SectionName = "Orchestrator";
 
     #region Launcher type
-    public LauncherType LauncherType { get; } = LauncherType.LocalProcess;
+    public LauncherType LauncherType { get; init; } = LauncherType.LocalProcess;
     #endregion
 
     #region Local process launcher

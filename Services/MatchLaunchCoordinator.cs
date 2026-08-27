@@ -67,6 +67,7 @@ internal sealed class MatchLaunchCoordinator(
     {
         var configuration = options.Value;
 
+        var ipAddresses = snapshot.Members.Select(member => member.IpAddress).ToList();
         var spec = new EdgegapGameServerLaunchSpec(
             snapshot.IntendedServerVersion,
             new Dictionary<string, string>()
@@ -78,13 +79,8 @@ internal sealed class MatchLaunchCoordinator(
                 [GameServerLaunchSpec.GameModeVariable] = snapshot.GameMode,
                 [GameServerLaunchSpec.IntendedServerVersionVariable] = snapshot.IntendedServerVersion
             },
-            new List<string>()
+            ipAddresses
         );
-        foreach (var member in snapshot.Members)
-        {
-            _ = spec.UserIpAddresses.Append(member.IpAddress);
-        }
-
         return spec;
     }
 }
