@@ -42,6 +42,7 @@ public sealed record OrchestratorOptions
 
     #region Edgegap configuration
 
+    public string EdgegapApplicationName { get; init; } = "Resonance";
     public string EdgegapApiKey { get; init; } = string.Empty;
     public string EdgegapBaseUrl { get; init; } = "https://api.edgegap.com";
     public int EdgegapPollingDelayMs { get; init; } = 2000;

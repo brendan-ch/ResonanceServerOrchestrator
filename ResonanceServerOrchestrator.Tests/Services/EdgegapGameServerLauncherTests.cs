@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
 using NSubstitute.ExceptionExtensions;
+using ResonanceServerOrchestrator.Configuration;
 using ResonanceServerOrchestrator.Services;
 using ResonanceServerOrchestrator.Services.Edgegap;
 using Xunit;
@@ -22,7 +23,8 @@ public sealed class EdgegapGameServerLauncherTests : IDisposable
             _edgegapClient,
             pollingDelayMs,
             maxPollingAttempts,
-            new NullLogger<EdgegapGameServerLauncher>()
+            new NullLogger<EdgegapGameServerLauncher>(),
+            new OrchestratorOptions()
         );
     }
 

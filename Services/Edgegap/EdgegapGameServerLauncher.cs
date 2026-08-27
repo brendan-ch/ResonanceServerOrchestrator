@@ -1,10 +1,13 @@
+using ResonanceServerOrchestrator.Configuration;
+
 namespace ResonanceServerOrchestrator.Services.Edgegap;
 
 public sealed class EdgegapGameServerLauncher(
     IEdgegapClient client,
     int pollingDelayMs,
     int maxPollingAttempts,
-    ILogger<EdgegapGameServerLauncher> logger) : IGameServerLauncher
+    ILogger<EdgegapGameServerLauncher> logger,
+    OrchestratorOptions options) : IGameServerLauncher
 {
     public bool ReportsReadiness => true;
 
@@ -30,7 +33,7 @@ public sealed class EdgegapGameServerLauncher(
         )).ToList();
 
         var deploymentRequest = new EdgegapDeploymentRequest(
-            "Resonance",
+            options.EdgegapApplicationName,
             edgegapSpec.ServerVersion,
             users,
             EnvironmentVariables: environmentVariables

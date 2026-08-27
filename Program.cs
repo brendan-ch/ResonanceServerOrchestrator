@@ -98,7 +98,8 @@ switch (launcherType)
                 sp.GetRequiredService<IEdgegapClient>(),
                 options.EdgegapPollingDelayMs,
                 options.EdgegapMaxPollingAttempts,
-                sp.GetRequiredService<ILogger<EdgegapGameServerLauncher>>());
+                sp.GetRequiredService<ILogger<EdgegapGameServerLauncher>>(),
+                options);
         });
         break;
     case LauncherType.LocalProcess:
