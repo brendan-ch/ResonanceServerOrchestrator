@@ -1,3 +1,4 @@
+using System.Net;
 using Microsoft.Extensions.Time.Testing;
 using ResonanceServerOrchestrator.Configuration;
 using Resonance.Contracts;
@@ -9,6 +10,7 @@ namespace ResonanceServerOrchestrator.Tests.Stores;
 internal sealed class MatchStoreTestContext
 {
     private static readonly TimeSpan WaiterCompletionBudget = TimeSpan.FromSeconds(10);
+    public static readonly IPAddress DefaultIpAddress = IPAddress.Parse("203.0.113.10");
 
     public static readonly LobbyKey FirstLobby = new(Platform.Steam, "lobby-one");
     public static readonly LobbyKey SecondLobby = new(Platform.Steam, "lobby-two");
@@ -33,22 +35,26 @@ internal sealed class MatchStoreTestContext
     public static string UsernameOf(string platformUserId) => $"{platformUserId}-display-name";
 
     public JoinOutcome Join(LobbyKey lobby, string platformUserId, IReadOnlyList<PlayerIdentity> roster,
-        string nextSceneName, string gameMode) =>
-        Store.TryJoin(lobby, Player(platformUserId), UsernameOf(platformUserId), roster, nextSceneName, gameMode);
+        string nextSceneName, string gameMode, string intendedServerVersion, IPAddress? ipAddress = null) =>
+        Store.TryJoin(lobby, Player(platformUserId), UsernameOf(platformUserId), ipAddress ?? DefaultIpAddress,
+            roster, nextSceneName, gameMode, intendedServerVersion);
 
     public AssembledMatch AssembleRoster(LobbyKey lobby, string nextSceneName, string gameMode,
+        string intendedServerVersion,
         params string[] platformUserIds)
     {
         var roster = Roster(platformUserIds);
-        var outcomes = platformUserIds.Select(id => Join(lobby, id, roster, nextSceneName, gameMode)).ToArray();
+        var outcomes = platformUserIds
+            .Select(id => Join(lobby, id, roster, nextSceneName, gameMode, intendedServerVersion)).ToArray();
         var rosterComplete = Assert.Single(outcomes.OfType<RosterComplete>());
         return new AssembledMatch(rosterComplete.Snapshot, outcomes);
     }
 
     public AssembledMatch StartMatch(LobbyKey lobby, string nextSceneName, string gameMode,
+        string intendedServerVersion,
         params string[] platformUserIds)
     {
-        var assembled = AssembleRoster(lobby, nextSceneName, gameMode, platformUserIds);
+        var assembled = AssembleRoster(lobby, nextSceneName, gameMode, intendedServerVersion, platformUserIds);
         Assert.Equal(
             MarkReadyOutcome.MatchStarted,
             Store.MarkReady(assembled.Snapshot.MatchId, assembled.Snapshot.MatchKey));

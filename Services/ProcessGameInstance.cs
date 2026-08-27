@@ -30,17 +30,26 @@ public sealed class ProcessGameInstance : IGameInstance
         }
     }
 
-    public void Stop()
+    public Task Stop()
     {
         try
         {
-            _process.Kill(entireProcessTree: true);
+            try
+            {
+                _process.Kill(entireProcessTree: true);
+            }
+            catch (InvalidOperationException)
+            {
+            }
+            catch (NotSupportedException)
+            {
+            }
+
+            return Task.CompletedTask;
         }
-        catch (InvalidOperationException)
+        catch (Exception exception)
         {
-        }
-        catch (NotSupportedException)
-        {
+            return Task.FromException(exception);
         }
     }
 

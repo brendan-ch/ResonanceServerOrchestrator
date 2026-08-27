@@ -6,6 +6,7 @@ internal sealed record MatchMember(
     PlayerIdentity Identity,
     string Username,
     string ServerAuthToken,
+    string IpAddress,
     long MemberGeneration,
     TaskCompletionSource<JoinResult> Completion)
 {
@@ -13,13 +14,15 @@ internal sealed record MatchMember(
         PlayerIdentity identity,
         string username,
         string serverAuthToken,
+        string ipAddress,
         long memberGeneration) =>
         new(identity,
             username,
             serverAuthToken,
+            ipAddress,
             memberGeneration,
             new TaskCompletionSource<JoinResult>(TaskCreationOptions.RunContinuationsAsynchronously));
 
     public MatchMemberDto ToDto() =>
-        new(Identity.Platform, Identity.PlatformUserId, Username, ServerAuthToken);
+        new(Identity.Platform, Identity.PlatformUserId, Username, ServerAuthToken, IpAddress);
 }

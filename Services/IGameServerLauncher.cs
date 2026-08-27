@@ -3,5 +3,5 @@ namespace ResonanceServerOrchestrator.Services;
 public interface IGameServerLauncher
 {
     bool ReportsReadiness { get; }
-    IGameInstance Launch(GameServerLaunchSpec spec);
+    Task<IGameInstance> Launch(GameServerLaunchSpec spec, CancellationToken token = default);
 }

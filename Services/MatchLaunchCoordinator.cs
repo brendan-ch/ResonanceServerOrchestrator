@@ -10,12 +10,20 @@ internal sealed class MatchLaunchCoordinator(
     IOptions<OrchestratorOptions> options,
     ILogger<MatchLaunchCoordinator> logger)
 {
-    public void LaunchGameServerFor(MatchSnapshot snapshot)
+    public async Task LaunchGameServerFor(MatchSnapshot snapshot)
     {
         IGameInstance instance;
         try
         {
-            instance = launcher.Launch(BuildLaunchSpec(snapshot));
+            if (options.Value.LauncherType == LauncherType.Edgegap)
+            {
+                instance = await launcher.Launch(BuildEdgegapLaunchSpec(snapshot));
+            }
+            else
+            {
+                // NullGameServerLauncher takes the local launch spec
+                instance = await launcher.Launch(BuildLocalLaunchSpec(snapshot));
+            }
         }
         catch (Exception exception)
         {
@@ -27,7 +35,7 @@ internal sealed class MatchLaunchCoordinator(
 
         if (!store.TrySetInstance(snapshot.MatchId, instance))
         {
-            instance.Stop();
+            await instance.Stop();
             return;
         }
 
@@ -35,11 +43,11 @@ internal sealed class MatchLaunchCoordinator(
             store.MarkReady(snapshot.MatchId, snapshot.MatchKey);
     }
 
-    private GameServerLaunchSpec BuildLaunchSpec(MatchSnapshot snapshot)
+    private LocalGameServerLaunchSpec BuildLocalLaunchSpec(MatchSnapshot snapshot)
     {
         var configuration = options.Value;
 
-        return new GameServerLaunchSpec(
+        return new LocalGameServerLaunchSpec(
             configuration.UnityServerPath,
             configuration.UnityServerBaseArgs,
             new Dictionary<string, string>
@@ -50,7 +58,29 @@ internal sealed class MatchLaunchCoordinator(
                 [GameServerLaunchSpec.MatchKeyVariable] = snapshot.MatchKey,
                 [GameServerLaunchSpec.OrchestratorUrlVariable] = configuration.OrchestratorUrl,
                 [GameServerLaunchSpec.NextSceneNameVariable] = snapshot.NextSceneName,
-                [GameServerLaunchSpec.GameModeVariable] = snapshot.GameMode
+                [GameServerLaunchSpec.GameModeVariable] = snapshot.GameMode,
+                [GameServerLaunchSpec.IntendedServerVersionVariable] = snapshot.IntendedServerVersion
             });
+    }
+
+    private EdgegapGameServerLaunchSpec BuildEdgegapLaunchSpec(MatchSnapshot snapshot)
+    {
+        var configuration = options.Value;
+
+        var ipAddresses = snapshot.Members.Select(member => member.IpAddress).ToList();
+        var spec = new EdgegapGameServerLaunchSpec(
+            snapshot.IntendedServerVersion,
+            new Dictionary<string, string>()
+            {
+                [GameServerLaunchSpec.MatchIdVariable] = snapshot.MatchId.ToString("D"),
+                [GameServerLaunchSpec.MatchKeyVariable] = snapshot.MatchKey,
+                [GameServerLaunchSpec.OrchestratorUrlVariable] = configuration.OrchestratorUrl,
+                [GameServerLaunchSpec.NextSceneNameVariable] = snapshot.NextSceneName,
+                [GameServerLaunchSpec.GameModeVariable] = snapshot.GameMode,
+                [GameServerLaunchSpec.IntendedServerVersionVariable] = snapshot.IntendedServerVersion
+            },
+            ipAddresses
+        );
+        return spec;
     }
 }

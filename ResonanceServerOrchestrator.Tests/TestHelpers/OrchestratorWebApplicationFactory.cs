@@ -1,3 +1,5 @@
+using System.Net;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.Configuration;
@@ -22,7 +24,7 @@ internal sealed class OrchestratorWebApplicationFactory : WebApplicationFactory<
     public ISteamTicketValidator TicketValidatorSubstitute { get; } =
         Substitute.For<ISteamTicketValidator>();
 
-    private readonly TaskCompletionSource<GameServerLaunchSpec> _launchObserved =
+    private readonly TaskCompletionSource<LocalGameServerLaunchSpec> _launchObserved =
         new(TaskCreationOptions.RunContinuationsAsynchronously);
 
     public OrchestratorWebApplicationFactory(
@@ -33,10 +35,10 @@ internal sealed class OrchestratorWebApplicationFactory : WebApplicationFactory<
             : new Dictionary<string, string?>(configurationOverrides);
 
         LauncherSubstitute.ReportsReadiness.Returns(true);
-        LauncherSubstitute.Launch(Arg.Any<GameServerLaunchSpec>())
+        LauncherSubstitute.Launch(Arg.Any<LocalGameServerLaunchSpec>())
             .Returns(call =>
             {
-                _launchObserved.TrySetResult(call.Arg<GameServerLaunchSpec>());
+                _launchObserved.TrySetResult(call.Arg<LocalGameServerLaunchSpec>());
                 return new NullGameInstance();
             });
     }
@@ -44,7 +46,7 @@ internal sealed class OrchestratorWebApplicationFactory : WebApplicationFactory<
     internal InMemoryMatchStore Store =>
         (InMemoryMatchStore)Services.GetRequiredService<IMatchStore>();
 
-    internal Task<GameServerLaunchSpec> LaunchObserved => _launchObserved.Task;
+    internal Task<LocalGameServerLaunchSpec> LaunchObserved => _launchObserved.Task;
 
     internal bool HasLaunched => _launchObserved.Task.IsCompleted;
 
@@ -68,7 +70,21 @@ internal sealed class OrchestratorWebApplicationFactory : WebApplicationFactory<
             services.AddSingleton(LauncherSubstitute);
             services.RemoveAll<ISteamTicketValidator>();
             services.AddSingleton(TicketValidatorSubstitute);
+            services.AddTransient<IStartupFilter, FakeRemoteIpAddressStartupFilter>();
         });
+    }
+
+    private sealed class FakeRemoteIpAddressStartupFilter : IStartupFilter
+    {
+        public Action<IApplicationBuilder> Configure(Action<IApplicationBuilder> next) => app =>
+        {
+            app.Use((context, nextMiddleware) =>
+            {
+                context.Connection.RemoteIpAddress ??= IPAddress.Loopback;
+                return nextMiddleware();
+            });
+            next(app);
+        };
     }
 
     private static Dictionary<string, string?> DefaultConfiguration() => new()
@@ -77,8 +93,8 @@ internal sealed class OrchestratorWebApplicationFactory : WebApplicationFactory<
         [Key(nameof(OrchestratorOptions.UnityServerPath))] = ExistingFilePath(),
         [Key(nameof(OrchestratorOptions.SteamCredentialCheckDisabled))] = "true",
         [Key(nameof(OrchestratorOptions.MaxMatches))] = "1",
-        [Key(nameof(OrchestratorOptions.GameServerHost))] = "test-host",
-        [Key(nameof(OrchestratorOptions.GameServerPort))] = "7777",
+        [Key(nameof(OrchestratorOptions.LocalGameServerHost))] = "test-host",
+        [Key(nameof(OrchestratorOptions.LocalGameServerInternalAndExternalPort))] = "7777",
         [Key(nameof(OrchestratorOptions.OrchestratorUrl))] = "http://orchestrator.test",
         [Key(nameof(OrchestratorOptions.RosterAssemblyTimeoutSeconds))] = "45",
         [Key(nameof(OrchestratorOptions.ServerReadyTimeoutSeconds))] = "30",

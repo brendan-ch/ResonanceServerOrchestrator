@@ -28,7 +28,8 @@ internal static class MatchRequests
         IEnumerable<string> rosterPlatformUserIds,
         string? authenticationTicketHex = null,
         string nextSceneName = "TestScene",
-        string gameMode = "Arena"
+        string gameMode = "Arena",
+        string? intendedServerVersion = null  // to match client behavior
     ) => new
     {
         platformUserInformation = new
@@ -42,7 +43,8 @@ internal static class MatchRequests
             .Select(id => Player(id, $"player-{id}"))
             .ToArray(),
         nextSceneName,
-        gameMode
+        gameMode,
+        intendedServerVersion,
     };
 
     public static object LeaveBody(string platformUserId, string lobbyId) => new

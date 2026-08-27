@@ -9,6 +9,7 @@ public sealed class InMemoryMatchStoreCapacityTests
 {
     private const string SampleNextSceneName = "TestScene";
     private const string SampleGameMode = "Arena";
+    private const string SampleIntendedServerVersion = "test-server-version";
 
     private static readonly OrchestratorOptions SingleMatchCapacity = new()
     {
@@ -25,7 +26,7 @@ public sealed class InMemoryMatchStoreCapacityTests
 
         var outcomes = new[] { "alice", "bob", "carol", "dave", "erin" }
             .Select(platformUserId =>
-                context.Join(MatchStoreTestContext.FirstLobby, platformUserId, roster, SampleNextSceneName, SampleGameMode))
+                context.Join(MatchStoreTestContext.FirstLobby, platformUserId, roster, SampleNextSceneName, SampleGameMode, SampleIntendedServerVersion))
             .ToArray();
 
         Assert.DoesNotContain(outcomes, outcome => outcome is Rejected);
@@ -40,11 +41,11 @@ public sealed class InMemoryMatchStoreCapacityTests
     {
         var context = new MatchStoreTestContext(SingleMatchCapacity);
         context.Join(MatchStoreTestContext.FirstLobby, "alice", MatchStoreTestContext.Roster("alice", "bob"),
-            SampleNextSceneName, SampleGameMode);
+            SampleNextSceneName, SampleGameMode, SampleIntendedServerVersion);
 
         var secondLobbyAttempt = context.Join(
             MatchStoreTestContext.SecondLobby, "carol", MatchStoreTestContext.Roster("carol", "dave"),
-            SampleNextSceneName, SampleGameMode);
+            SampleNextSceneName, SampleGameMode, SampleIntendedServerVersion);
 
         var rejected = Assert.IsType<Rejected>(secondLobbyAttempt);
         Assert.Equal(JoinFailureReason.CapacityReached, rejected.Reason);
@@ -57,12 +58,12 @@ public sealed class InMemoryMatchStoreCapacityTests
     {
         var context = new MatchStoreTestContext(SingleMatchCapacity);
         context.Join(MatchStoreTestContext.FirstLobby, "alice", MatchStoreTestContext.Roster("alice", "bob"),
-            SampleNextSceneName, SampleGameMode);
+            SampleNextSceneName, SampleGameMode, SampleIntendedServerVersion);
         context.Store.TryLeave(MatchStoreTestContext.Player("alice"));
 
         var secondLobbyAttempt = context.Join(
             MatchStoreTestContext.SecondLobby, "carol", MatchStoreTestContext.Roster("carol", "dave"),
-            SampleNextSceneName, SampleGameMode);
+            SampleNextSceneName, SampleGameMode, SampleIntendedServerVersion);
 
         Assert.IsType<MemberAdded>(secondLobbyAttempt);
     }
@@ -77,7 +78,7 @@ public sealed class InMemoryMatchStoreCapacityTests
 
         RunSimultaneously(2, index => outcomes[index] = context.Join(
             lobbies[index], platformUserIds[index],
-            MatchStoreTestContext.Roster(platformUserIds[index], "peer"), SampleNextSceneName, SampleGameMode));
+            MatchStoreTestContext.Roster(platformUserIds[index], "peer"), SampleNextSceneName, SampleGameMode, SampleIntendedServerVersion));
 
         Assert.Equal(1, context.Store.LiveMatchCount);
         var rejected = Assert.Single(outcomes.OfType<Rejected>());
@@ -93,7 +94,7 @@ public sealed class InMemoryMatchStoreCapacityTests
         var outcomes = new JoinOutcome[platformUserIds.Length];
 
         RunSimultaneously(platformUserIds.Length, index => outcomes[index] = context.Join(
-            MatchStoreTestContext.FirstLobby, platformUserIds[index], roster, SampleNextSceneName, SampleGameMode));
+            MatchStoreTestContext.FirstLobby, platformUserIds[index], roster, SampleNextSceneName, SampleGameMode, SampleIntendedServerVersion));
 
         Assert.DoesNotContain(outcomes, outcome => outcome is Rejected);
         Assert.Single(outcomes.OfType<RosterComplete>());

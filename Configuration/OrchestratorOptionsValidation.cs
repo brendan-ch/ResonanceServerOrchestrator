@@ -27,7 +27,7 @@ public static class OrchestratorOptionsValidation
                 $"{Key(nameof(OrchestratorOptions.MaxMatches))} must be 1 when " +
                 $"{Key(nameof(OrchestratorOptions.LauncherType))} is " +
                 $"{nameof(LauncherType.LocalProcess)}: the local backend binds a single " +
-                $"{Key(nameof(OrchestratorOptions.GameServerPort))}.")
+                $"{Key(nameof(OrchestratorOptions.LocalGameServerInternalAndExternalPort))}.")
             .Validate(options => options.MaxMatches > 0,
                 $"{Key(nameof(OrchestratorOptions.MaxMatches))} must be greater than zero.")
             .Validate(options => options.RosterAssemblyTimeoutSeconds > 0,
@@ -36,14 +36,21 @@ public static class OrchestratorOptionsValidation
                 $"{Key(nameof(OrchestratorOptions.ServerReadyTimeoutSeconds))} must be positive.")
             .Validate(options => options.CleanupIntervalSeconds > 0,
                 $"{Key(nameof(OrchestratorOptions.CleanupIntervalSeconds))} must be positive.")
-            .Validate(options => options.GameServerPort is > 0 and <= 65535,
-                $"{Key(nameof(OrchestratorOptions.GameServerPort))} must be between 1 and 65535.")
+            .Validate(options => options.LocalGameServerInternalAndExternalPort is > 0 and <= 65535,
+                $"{Key(nameof(OrchestratorOptions.LocalGameServerInternalAndExternalPort))} must be between 1 and 65535.")
             .Validate(TombstonesOutliveTheServerReadyDeadline,
                 $"{Key(nameof(OrchestratorOptions.TombstoneRetentionMinutes))} must exceed " +
                 $"{Key(nameof(OrchestratorOptions.ServerReadyTimeoutSeconds))}, or a slow server " +
                 "receives 404 instead of 410 and never self-terminates.")
-            .Validate(options => !string.IsNullOrWhiteSpace(options.GameServerHost),
-                $"{Key(nameof(OrchestratorOptions.GameServerHost))} must not be empty.")
+            .Validate(options => !string.IsNullOrWhiteSpace(options.LocalGameServerHost),
+                $"{Key(nameof(OrchestratorOptions.LocalGameServerHost))} must not be empty.")
+            .Validate(EdgegapApiKeyIsPresentWhenLaunchingViaEdgegap,
+                $"{Key(nameof(OrchestratorOptions.EdgegapApiKey))} must not be empty when " +
+                $"{Key(nameof(OrchestratorOptions.LauncherType))} is {nameof(LauncherType.Edgegap)}.")
+            .Validate(options => options.EdgegapPollingDelayMs > 0,
+                $"{Key(nameof(OrchestratorOptions.EdgegapPollingDelayMs))} must be positive.")
+            .Validate(options => options.EdgegapMaxPollingAttempts > 0,
+                $"{Key(nameof(OrchestratorOptions.EdgegapMaxPollingAttempts))} must be positive.")
             .ValidateOnStart();
 
     private static bool SteamCredentialsArePresentWhenTheCheckIsEnabled(OrchestratorOptions options) =>
@@ -55,6 +62,9 @@ public static class OrchestratorOptionsValidation
 
     private static bool LocalProcessHostsExactlyOneMatch(OrchestratorOptions options) =>
         options.LauncherType != LauncherType.LocalProcess || options.MaxMatches == 1;
+
+    private static bool EdgegapApiKeyIsPresentWhenLaunchingViaEdgegap(OrchestratorOptions options) =>
+        options.LauncherType != LauncherType.Edgegap || !string.IsNullOrWhiteSpace(options.EdgegapApiKey);
 
     private static bool TombstonesOutliveTheServerReadyDeadline(OrchestratorOptions options) =>
         options.TombstoneRetentionMinutes * 60 > options.ServerReadyTimeoutSeconds;

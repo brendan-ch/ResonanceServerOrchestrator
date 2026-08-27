@@ -21,9 +21,10 @@ public sealed class MatchLaunchCoordinatorTests
         Guid.NewGuid(),
         MatchKey,
         7777,
-        [new MatchMemberDto(Platform.Steam, "76561198000000001", "alice", "token")],
+        [new MatchMemberDto(Platform.Steam, "76561198000000001", "alice", "token", "203.0.113.10")],
         "TestScene",
-        "Arena");
+        "Arena",
+        "IntendedServerVersion");
 
     private MatchLaunchCoordinator CreateCoordinator() =>
         new(_store, _launcher,
@@ -36,15 +37,15 @@ public sealed class MatchLaunchCoordinatorTests
             NullLogger<MatchLaunchCoordinator>.Instance);
 
     [Fact]
-    public void LaunchGameServerFor_InjectsTheMatchEnvironment()
+    public async Task LaunchGameServerFor_InjectsTheMatchEnvironment()
     {
         _launcher.ReportsReadiness.Returns(true);
-        _launcher.Launch(Arg.Any<GameServerLaunchSpec>()).Returns(new NullGameInstance());
+        _launcher.Launch(Arg.Any<LocalGameServerLaunchSpec>()).Returns(new NullGameInstance());
         _store.TrySetInstance(Snapshot.MatchId, Arg.Any<IGameInstance>()).Returns(true);
 
-        CreateCoordinator().LaunchGameServerFor(Snapshot);
+        await CreateCoordinator().LaunchGameServerFor(Snapshot);
 
-        var spec = (GameServerLaunchSpec)_launcher.ReceivedCalls()
+        var spec = (LocalGameServerLaunchSpec)_launcher.ReceivedCalls()
             .Single(call => call.GetMethodInfo().Name == nameof(IGameServerLauncher.Launch))
             .GetArguments()[0]!;
 
@@ -61,53 +62,53 @@ public sealed class MatchLaunchCoordinatorTests
     }
 
     [Fact]
-    public void LaunchGameServerFor_WhenTheLauncherNeverReportsReadiness_MarksTheMatchReadyItself()
+    public async Task LaunchGameServerFor_WhenTheLauncherNeverReportsReadiness_MarksTheMatchReadyItself()
     {
         _launcher.ReportsReadiness.Returns(false);
-        _launcher.Launch(Arg.Any<GameServerLaunchSpec>()).Returns(new NullGameInstance());
+        _launcher.Launch(Arg.Any<LocalGameServerLaunchSpec>()).Returns(new NullGameInstance());
         _store.TrySetInstance(Snapshot.MatchId, Arg.Any<IGameInstance>()).Returns(true);
 
-        CreateCoordinator().LaunchGameServerFor(Snapshot);
+        await CreateCoordinator().LaunchGameServerFor(Snapshot);
 
         _store.Received(1).MarkReady(Snapshot.MatchId, MatchKey);
     }
 
     [Fact]
-    public void LaunchGameServerFor_WhenTheLauncherReportsReadiness_WaitsForTheCallback()
+    public async Task LaunchGameServerFor_WhenTheLauncherReportsReadiness_WaitsForTheCallback()
     {
         _launcher.ReportsReadiness.Returns(true);
-        _launcher.Launch(Arg.Any<GameServerLaunchSpec>()).Returns(new NullGameInstance());
+        _launcher.Launch(Arg.Any<LocalGameServerLaunchSpec>()).Returns(new NullGameInstance());
         _store.TrySetInstance(Snapshot.MatchId, Arg.Any<IGameInstance>()).Returns(true);
 
-        CreateCoordinator().LaunchGameServerFor(Snapshot);
+        await CreateCoordinator().LaunchGameServerFor(Snapshot);
 
         _store.DidNotReceive().MarkReady(Arg.Any<Guid>(), Arg.Any<string>());
     }
 
     [Fact]
-    public void LaunchGameServerFor_WhenLaunchThrows_FailsTheMatchInsteadOfLeavingItToTimeOut()
+    public async Task LaunchGameServerFor_WhenLaunchThrows_FailsTheMatchInsteadOfLeavingItToTimeOut()
     {
         _launcher.ReportsReadiness.Returns(true);
-        _launcher.Launch(Arg.Any<GameServerLaunchSpec>())
+        _launcher.Launch(Arg.Any<LocalGameServerLaunchSpec>())
             .Throws(new GameServerLaunchException("the binary is missing"));
 
-        CreateCoordinator().LaunchGameServerFor(Snapshot);
+        await CreateCoordinator().LaunchGameServerFor(Snapshot);
 
         _store.Received(1).OnInstanceExited(Snapshot.MatchId);
         _store.DidNotReceive().TrySetInstance(Arg.Any<Guid>(), Arg.Any<IGameInstance>());
     }
 
     [Fact]
-    public void LaunchGameServerFor_WhenTheMatchIsAlreadyGone_StopsTheOrphanedProcess()
+    public async Task LaunchGameServerFor_WhenTheMatchIsAlreadyGone_StopsTheOrphanedProcess()
     {
         var instance = Substitute.For<IGameInstance>();
         _launcher.ReportsReadiness.Returns(true);
-        _launcher.Launch(Arg.Any<GameServerLaunchSpec>()).Returns(instance);
+        _launcher.Launch(Arg.Any<LocalGameServerLaunchSpec>()).Returns(instance);
         _store.TrySetInstance(Snapshot.MatchId, instance).Returns(false);
 
-        CreateCoordinator().LaunchGameServerFor(Snapshot);
+        await CreateCoordinator().LaunchGameServerFor(Snapshot);
 
-        instance.Received(1).Stop();
+        await instance.Received(1).Stop();
         _store.DidNotReceive().MarkReady(Arg.Any<Guid>(), Arg.Any<string>());
     }
 }

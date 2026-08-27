@@ -23,6 +23,7 @@ public sealed class UnitySerializerCompatibilityTests
 {
     private const string SampleNextSceneName = "TestScene";
     private const string SampleGameMode = "Arena";
+    private const string SampleIntendedServerVersion = "test-server-version";
 
     private static readonly JsonSerializerOptions OrchestratorOptions =
         new JsonSerializerOptions(JsonSerializerDefaults.Web).ApplyOrchestratorConventions();
@@ -69,7 +70,7 @@ public sealed class UnitySerializerCompatibilityTests
     public void MatchMember_WrittenByTheOrchestrator_IsReadableByUnity()
     {
         var written = OrchestratorWrites(
-            new MatchMemberDto(Platform.Steam, "76561198000000001", "ana", "token-abc"));
+            new MatchMemberDto(Platform.Steam, "76561198000000001", "ana", "token-abc", "203.0.113.10"));
 
         var read = UnityReads<MatchMemberDto>(written);
 
@@ -77,6 +78,7 @@ public sealed class UnitySerializerCompatibilityTests
         Assert.Equal("76561198000000001", read.PlatformUserId);
         Assert.Equal("ana", read.Username);
         Assert.Equal("token-abc", read.ServerAuthToken);
+        Assert.Equal("203.0.113.10", read.IpAddress);
     }
 
     [Theory]
@@ -113,6 +115,28 @@ public sealed class UnitySerializerCompatibilityTests
         Assert.Equal("lobby-1", read.PlatformUserInformation.PlatformLobbyId);
         Assert.Equal("14000000AABB", read.PlatformUserInformation.AuthenticationTicketHex);
         Assert.Equal(["ana", "bo"], read.ExpectedLobbyPlayers.Select(player => player.Username));
+    }
+
+    [Fact]
+    public void JoinRequestWithServerVersion_WrittenByUnity_IsReadableByTheOrchestrator()
+    {
+        var written = UnityWrites(new JoinMatchDto(
+            new PlatformUserInformationDto(
+                Platform.Steam, "76561198000000001", "lobby-1", "14000000AABB"),
+            [
+                new ExpectedLobbyPlayerDto("ana", Platform.Steam, "76561198000000001"),
+                new ExpectedLobbyPlayerDto("bo", Platform.Steam, "76561198000000002"),
+            ], SampleNextSceneName, SampleGameMode, SampleIntendedServerVersion));
+
+        var read = JsonSerializer.Deserialize<JoinMatchDto>(written, OrchestratorOptions)
+                   ?? throw new InvalidOperationException("The join request bound to null.");
+
+        Assert.Equal(Platform.Steam, read.PlatformUserInformation.Platform);
+        Assert.Equal("76561198000000001", read.PlatformUserInformation.PlatformUserId);
+        Assert.Equal("lobby-1", read.PlatformUserInformation.PlatformLobbyId);
+        Assert.Equal("14000000AABB", read.PlatformUserInformation.AuthenticationTicketHex);
+        Assert.Equal(["ana", "bo"], read.ExpectedLobbyPlayers.Select(player => player.Username));
+        Assert.Equal(SampleIntendedServerVersion, read.IntendedServerVersion);
     }
 
     [Fact]

@@ -8,12 +8,14 @@ namespace Resonance.Contracts
             Platform platform,
             string platformUserId,
             string username,
-            string serverAuthToken)
+            string serverAuthToken,
+            string ipAddress)
         {
             Platform = platform;
             PlatformUserId = platformUserId;
             Username = username;
             ServerAuthToken = serverAuthToken;
+            IpAddress = ipAddress;
         }
 
         public Platform Platform { get; }
@@ -23,5 +25,7 @@ namespace Resonance.Contracts
         public string Username { get; }
 
         public string ServerAuthToken { get; }
+
+        public string IpAddress { get; }
     }
 }

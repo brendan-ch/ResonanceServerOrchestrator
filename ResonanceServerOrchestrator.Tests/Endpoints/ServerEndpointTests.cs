@@ -46,7 +46,7 @@ public sealed class ServerEndpointTests : IDisposable
         var spec = await _factory.LaunchObserved.WaitAsync(TestBudget);
 
         return new LaunchedMatch(
-            matchId, spec.Environment[GameServerLaunchSpec.MatchKeyVariable], joins);
+            matchId, spec.Environment[LocalGameServerLaunchSpec.MatchKeyVariable], joins);
     }
 
     private Task<HttpResponseMessage> SendServerRequestAsync(
@@ -160,6 +160,7 @@ public sealed class ServerEndpointTests : IDisposable
             members.Select(member => member.PlatformUserId).OrderBy(id => id));
         Assert.Equal(2, members.Select(member => member.ServerAuthToken).Distinct().Count());
         Assert.All(members, member => Assert.Equal(Platform.Steam, member.Platform));
+        Assert.All(members, member => Assert.Equal(IPAddress.Loopback.ToString(), member.IpAddress));
 
         await Task.WhenAll(match.Joins);
     }

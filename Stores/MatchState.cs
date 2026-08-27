@@ -13,6 +13,7 @@ internal sealed record MatchState
     public required IReadOnlyList<PlayerIdentity> CanonicalRoster { get; init; }
     public required string NextSceneName { get; init; }
     public required string GameMode { get; init; }
+    public required string IntendedServerVersion { get; init; }
     public required DateTimeOffset CreatedAt { get; init; }
     public required ImmutableDictionary<PlayerIdentity, MatchMember> Members { get; init; }
     public DateTimeOffset? ReadyAt { get; init; }
