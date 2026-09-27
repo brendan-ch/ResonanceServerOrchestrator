@@ -119,6 +119,9 @@ else
         .AddHttpClient<ISteamTicketValidator, SteamWebApiTicketValidator>()
         .RemoveAllLoggers();
 
+// see https://learn.microsoft.com/en-us/aspnet/core/host-and-deploy/health-checks?view=aspnetcore-10.0
+builder.Services.AddHealthChecks();
+
 var app = builder.Build();
 
 if (steamCredentialCheckDisabled)
@@ -139,6 +142,7 @@ app.UseRateLimiter();
 
 app.MapMatchEndpoints(versionSet);
 app.MapServerEndpoints(versionSet);
+app.MapHealthChecks("/healthz");
 
 app.Run();
 
