@@ -26,7 +26,7 @@ jobs:
       with:
         context: .
         push: true
-        tags: ghcr.io/${{ github.actor }}/ResonanceServerOrchestrator:latest
+        tags: ghcr.io/${{ github.actor }}/resonance-server-orchestrator:latest
 
     - name: Set up Tailscale
       uses: tailscale/github-action@v4
